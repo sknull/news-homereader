@@ -9,7 +9,7 @@
 
 == Status
 
-https://github.com/sknull/news-homereader/actions/workflows/github-ci.yml[image:https://github.com/sknull/news-homereader/actions/workflows/github-ci.yml/badge.svg[Photosite]]
+https://github.com/sknull/news-homereader/actions/workflows/github-ci.yml[image:https://github.com/sknull/news-homereader/actions/workflows/github-ci.yml/badge.svg[News Home Reader]]
 
 == Motivation
 
