@@ -30,6 +30,14 @@ What I have so far:
 - hide and unhide read items
 - images are cached in the local file system.
 
+== Getting Started
+
+- copy directory to your home directory (can be configured with the project internal application.yml)
+- modify newsfeeds.json to your liking using the same structure
+- start the server within the ide
+- point your browser to http://localhost:8888
+- start reading news
+
 == Roadmap
 
 Next up
