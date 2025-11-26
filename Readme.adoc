@@ -1,0 +1,41 @@
+= News Homereader
+:doctype: book
+:description: Documentation for news-homereader
+:keywords: kotlin, rdf, rss
+:icons: font
+:toc:
+:toc-title: Contents
+:toclevels: 10
+
+== Status
+
+https://github.com/sknull/news-homereader/actions/workflows/github-ci.yml[image:https://github.com/sknull/news-homereader/actions/workflows/github-ci.yml/badge.svg[Photosite]]
+
+== Motivation
+
+During my other project link:https://github.com/sknull/jackson-hybrid-xml[jackson-hybrid-xml] I needed some useful example which uses xml with embedded html markup. So I decided to make some example classes for dealing with rss / rdf and atom newsfeeds.
+
+Idea was to make use of those within an android app.
+
+Quickly it turned out that there are some flavors of newsfeeds which made it necessary to normalize those. Of course this grew much more as I wanted to have it in a library which should be endformat neutral.
+
+So I created a new project with that base code. AS I am no android developer but wanted to have a feature rich newsreader to use at home.
+The app which comes closest to what I have in mind is link:https://play.google.com/store/apps/details?id=com.nononsenseapps.feeder.play&hl=de[Feeder].
+
+What I have so far:
+
+- configurable and custom groupable subscriptions
+- read different kinds of news feeds and normalize them
+- mark all currently displayed news items as read or unread
+- hide and unhide read items
+- images are cached in the local file system.
+
+== Roadmap
+
+Next up
+
+- maintaining the image cache
+- maybe cache stories in the local file system (is this fast enough on a raspberry pi?)
+- periodically download full articles for subscribed news feeds and cache them locally
+- capability to import opml for subscriptions
+- a lot of html markup is rendered within code - this should go into thymeleaf templates

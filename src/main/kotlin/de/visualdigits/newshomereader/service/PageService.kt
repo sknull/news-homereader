@@ -1,0 +1,204 @@
+package de.visualdigits.newshomereader.service
+
+import de.visualdigits.newshomereader.model.cache.images.ImageProxy
+import de.visualdigits.newshomereader.model.cache.newsitem.NewsItemCache
+import de.visualdigits.newshomereader.model.configuration.NewsHomeReader
+import de.visualdigits.newshomereader.model.newsfeed.unified.NewsFeed
+import de.visualdigits.newshomereader.model.newsfeed.unified.NewsItem
+import de.visualdigits.newshomereader.model.page.Page
+import jakarta.servlet.http.HttpServletRequest
+import org.springframework.stereotype.Service
+import org.springframework.ui.Model
+import java.io.UnsupportedEncodingException
+import java.net.URI
+import java.net.URLDecoder
+import java.time.format.DateTimeFormatter
+
+@Service
+class PageService(
+    private val newsHomeReader: NewsHomeReader,
+    private val newsItemCache: NewsItemCache,
+    private val imageProxy: ImageProxy
+) {
+
+    fun renderPage(
+        feedName: String = "",
+        identifier: String = "",
+        hideRead: Boolean = false,
+        model: Model,
+        request: HttpServletRequest,
+    ): String {
+        val currentPage = determineCurrentPage(request)
+        renderMarkup(currentPage, model, identifier = identifier, feedName = feedName, hideRead = hideRead)
+
+        return "pagetemplate"
+    }
+
+    fun formHideRead(
+        model: Model,
+        request: HttpServletRequest
+    ): String {
+        val currentPage = determineCurrentPage(request)
+        val hideRead = request.parameterMap["hideRead"] == null
+        renderMarkup(currentPage, model, hideRead)
+
+        return "pagetemplate"
+    }
+
+    fun formMarkAllRead(
+        model: Model,
+        request: HttpServletRequest
+    ): String {
+        val currentPage = determineCurrentPage(request)
+        val hideRead = request.parameterMap["hideRead"]?.firstOrNull() == "true"
+        val markAllRead = request.parameterMap["markAllRead"] != null
+        val markAllUnread = request.parameterMap["markAllUnread"] != null
+        if (currentPage != null) {
+            val (feed, _) = determineFeed(currentPage)
+            if (markAllRead) {
+                feed?.items?.forEach { item -> item.read = true }
+            } else if (markAllUnread) {
+                feed?.items?.forEach { item -> item.read = false }
+            }
+        }
+        renderMarkup(currentPage, model, hideRead)
+
+        return "pagetemplate"
+    }
+
+    private fun renderMarkup(
+        currentPage: Page?,
+        model: Model,
+        hideRead: Boolean = false,
+        identifier: String = "",
+        feedName: String = ""
+    ) {
+        if (currentPage != null) {
+            val path = currentPage.path()
+
+            model.addAttribute("theme", newsHomeReader.theme)
+            model.addAttribute("title", newsHomeReader.siteTitle)
+            model.addAttribute("naviMain", mainNaviHtml(theme = newsHomeReader.theme, currentPage = currentPage, hideRead = hideRead))
+
+            val (feed, isMultiFeed) = determineFeed(currentPage)
+            if (identifier.isNotEmpty()) {
+                val newsItem = newsItemCache.getNewsItem(feedName, identifier)
+                newsItem?.also { item ->
+                    item.read = true
+                    item.readFullArticle()
+                    renderArticleHeader(path, hideRead, item, model)
+
+                    model.addAttribute("content", item.toHtml(
+                        imageProxy = imageProxy,
+                        fullArticle = true,
+                        isMultiFeed = isMultiFeed,
+                        hideRead = hideRead
+                    ))
+                }
+            } else {
+                feed?.also { feed ->
+                    renderButtons(hideRead, path, model)
+                    renderFeedTitle(isMultiFeed, path, feed, model)
+
+                    model.addAttribute("content", feed.toHtml(
+                        imageProxy = imageProxy,
+                        multiFeed = isMultiFeed,
+                        hideRead = hideRead,
+                        path = path
+                    ))
+                }
+            }
+        }
+    }
+
+    private fun renderArticleHeader(path: String, hideRead: Boolean, item: NewsItem, model: Model) {
+        val sb = StringBuilder()
+        sb.append("<div id=\"feedtitle-path\"><a class=\"title\" href=\"/news/$path?hideRead=$hideRead&\" alt=\"Zurück zum Feed\" title=\"Zurück zum Feed\">${path.replace("/", " / ")}</a><span class=\"feedName\">${item.feedName}</span></div>")
+        sb.append("<div id=\"feedtitle-title\"><a class=\"title\" href=\"${item.link}\" alt=\"Original Artikel aufrufen.\" title=\"Original Artikel aufrufen.\" target=\"_blank\">${item.title}</a></div>")
+        sb.append("<div id=\"feedtitle-date\">${item.updated?.format(DateTimeFormatter.ofPattern("dd.MM.YYYY HH:mm"))}</div>")
+        model.addAttribute("feedtitle", sb.toString())
+    }
+
+    private fun renderFeedTitle(isMultiFeed: Boolean, path: String, feed: NewsFeed, model: Model) {
+        val sb = StringBuilder()
+        if (isMultiFeed) {
+            sb.append("<div id=\"feedtitle-path\">${path.replace("/", " / ")}</div>")
+        } else {
+            sb.append("<div id=\"feedtitle-path\">${feed.title}</div>")
+        }
+        sb.append("<div id=\"feedtitle-title\">${feed.description ?: ""}</div>")
+        sb.append("<div id=\"feedtitle-date\"></div>")
+        model.addAttribute("feedtitle", sb.toString())
+    }
+
+    private fun renderButtons(hideRead: Boolean, path: String, model: Model) {
+        val buttons = StringBuilder()
+        val checked = if (hideRead) " checked" else ""
+        buttons.append("<div id=\"feedtitle-buttons\">")
+
+        buttons.append("<form id=\"formHideRead\" action=\"/formHideRead/$path\" method=\"POST\">")
+        buttons.append("<div class=\"container\">")
+        buttons.append("<span class=\"label\">Gelesene verstecken</span>")
+        buttons.append("<label class=\"switch\">")
+        buttons.append("<input type=\"checkbox\" id=\"hideRead\" name=\"hideRead\" value=\"true\"$checked>")
+        buttons.append("<span class=\"slider\" onclick=\"javascript:formHideRead.submit();\"></span>")
+        buttons.append("</label>")
+        buttons.append("</div>")
+        buttons.append("</form>")
+
+        buttons.append("<form id=\"formMarkAllRead\" action=\"/formMarkAllRead/$path\" method=\"POST\">")
+        buttons.append("<button type=\"submit\" id=\"markAllRead\" name=\"markAllRead\" value=\"true\">Alle gelesen</button>")
+        buttons.append("<button type=\"submit\" id=\"markAllUnread\" name=\"markAllUnread\" value=\"true\">Alle ungelesen</button>")
+        buttons.append("<input type=\"hidden\" id=\"hideRead\" name=\"hideRead\" value=\"$hideRead\">")
+        buttons.append("</form>")
+
+        buttons.append("</div>")
+        model.addAttribute("buttons", buttons.toString())
+    }
+
+    private fun determineFeed(currentPage: Page): Pair<NewsFeed?, Boolean> = if (currentPage.isLeaf()) {
+        currentPage.url?.let { u ->
+            Pair(NewsFeed.readValue(newsItemCache, currentPage.name, URI(u)).applyPageFilters(currentPage), false) } ?: Pair(null, false)
+    } else {
+        val children = currentPage.allChildren()
+        val feeds = children.mapNotNull { page -> page.url?.let { u -> NewsFeed.readValue(newsItemCache, page.name, URI(u)).applyPageFilters(page) } }
+        val f = NewsFeed(
+            title = feeds.joinToString(" ") { c -> c.title ?: "" },
+            updated = feeds.map { feed -> feed.updated }.maxBy { u -> u?.toInstant()?.toEpochMilli() ?: 0 },
+            keywords = feeds.flatMap { feed -> feed.keywords ?: listOf() },
+            items = feeds.flatMap { feed -> feed.items }
+        )
+        Pair(f, true)
+    }
+
+    private fun mainNaviHtml(currentPage: Page? = null, theme: String, hideRead: Boolean): String {
+        val html = StringBuilder()
+        html
+            .append("                        <span class=\"sidebar-title\">Newsfeeds</span>\n")
+            .append(newsHomeReader.newsFeedsConfiguration?.naviMain?.toHtml(
+                currentPage = currentPage,
+                theme = theme,
+                hideRead = hideRead,
+                indent = "                        "
+            ))
+
+        return html.toString()
+    }
+
+    private fun determineCurrentPage(request: HttpServletRequest): Page? {
+        var requestUri = getRequestUri(request).replace("/news", "").let { ru -> if (ru.startsWith("/")) ru.drop(1) else ru }
+        val currentPage = newsHomeReader.newsFeedsConfiguration?.naviMain?.getPage(requestUri)
+
+        return currentPage
+    }
+
+    private fun getRequestUri(request: HttpServletRequest): String {
+        var uri = ""
+        try {
+            uri = URLDecoder.decode(request.requestURI, request.characterEncoding)
+        } catch (_: UnsupportedEncodingException) {
+            // ignore
+        }
+        return uri
+    }
+}

@@ -1,0 +1,10 @@
+server:
+  port: 8888
+newshomereader:
+  theme: "light"
+  siteTitle: "My News At Home"
+  max-items-in-cache: 1000
+  max-images-in-cache: 2000
+  max-download-retries: 3 # for downloading images
+  download-retry-delay: 1000 # for downloading images
+  

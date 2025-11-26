@@ -1,0 +1,55 @@
+{
+  "naviMain": {
+    "children": [
+      {
+        "name": "News",
+        "children": [
+          {
+            "name": "Welt",
+            "children": [
+              {
+                "name": "Tagesschau",
+                "url": "https://www.tagesschau.de/infoservices/alle-meldungen-100~rss2.xml"
+              },
+              {
+                "name": "NTV",
+                "url": "https://www.n-tv.de/rss"
+              }
+            ]
+          },
+          {
+            "name": "Lokal",
+            "children": [
+              {
+                "name": "NDR",
+                "url": "https://www.ndr.de/nachrichten/hamburg/index~rdf.xml"
+              },
+              {
+                "name": "WDR",
+                "url": "https://www1.wdr.de/nachrichten/ruhrgebiet/uebersicht-ruhrgebiet-100.feed"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "IT",
+        "children": [
+          {
+            "name": "Heise",
+            "url": "https://www.heise.de/rss/heise-atom.xml",
+			"filters": {
+				"title": {
+					"stopWords": ["heise+"]
+				}
+			}
+          },
+          {
+            "name": "t3n",
+            "url": "https://t3n.de/rss.xml"
+          }
+        ]
+      }
+    ]
+  }
+}

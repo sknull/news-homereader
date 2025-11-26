@@ -1,0 +1,7 @@
+security:
+  require-ssl: false
+
+spring:
+#  profiles:
+#    active:
+#      - ssl

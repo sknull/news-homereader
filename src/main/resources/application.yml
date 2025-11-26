@@ -1,0 +1,12 @@
+server:
+  application:
+    name: News At Home
+  logging:
+    requestLogging: false
+
+security:
+  require-ssl: false
+
+spring:
+  config:
+    import: file:${user.home}/.newshomereader/resources/application.yml
