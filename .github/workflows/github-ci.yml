@@ -1,4 +1,4 @@
-name: PhotoSite Kotlin
+name: News Home Reader
 
 on:
   push:
