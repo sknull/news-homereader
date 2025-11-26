@@ -274,7 +274,7 @@
         <repository>
           <id>github</id>
           <name>GitHub sknull Apache Maven Packages</name>
-          <url>https://maven.pkg.github.com/sknull/jaudiotagger</url>
+          <url>https://maven.pkg.github.com/sknull/jackson-hybrid-xml</url>
           <releases>
             <enabled>true</enabled>
           </releases>
