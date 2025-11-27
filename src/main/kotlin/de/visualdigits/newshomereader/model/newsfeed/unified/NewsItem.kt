@@ -1,6 +1,8 @@
 package de.visualdigits.newshomereader.model.newsfeed.unified
 
 import de.visualdigits.hybridxml.model.BaseNode
+import de.visualdigits.hybridxml.model.html.Html
+import de.visualdigits.hybridxml.model.polymorphic.PolymorphicNode
 import de.visualdigits.newshomereader.model.cache.images.ImageProxy
 import de.visualdigits.newshomereader.model.cache.newsitem.NewsItemCacheKey
 import io.github.cdimascio.essence.Essence
@@ -81,8 +83,18 @@ class NewsItem(
     }
 
     fun readFullArticle() {
-        link?.let { l -> URI(l).toURL().readText() }?.let { rawHtml ->
-            html = Essence.extract(rawHtml).html
+        if (html == null) {
+            // read only once from website to acoid traffic
+            link?.let { l -> URI(l).toURL().readText() }?.let { rawHtml ->
+                // try to avoid repeating the summary (extraction heuristics are not perfect...)
+                var html = Essence.extract(rawHtml).html
+                summary?.let { s ->
+                    if(html.contains(s)) {
+                        html = html.replace(s, "")
+                    }
+                }
+                this.html = html
+            }
         }
     }
 
