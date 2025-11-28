@@ -4,7 +4,6 @@ import de.visualdigits.newshomereader.model.configuration.NewsHomeReader
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Description
-import org.springframework.retry.annotation.EnableRetry
 import org.springframework.web.servlet.ViewResolver
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
@@ -15,22 +14,9 @@ import org.thymeleaf.templateresolver.ITemplateResolver
 import java.nio.file.Paths
 
 @Configuration
-@EnableRetry
 class WebConfig(
     private val newsHomeReader: NewsHomeReader
 ) : WebMvcConfigurer {
-
-    //    @Bean
-    //    @Description("Thymeleaf template resolver serving HTML 5")
-    //    public ClassLoaderTemplateResolver templateResolver() {
-    //        final ClassLoaderTemplateResolver templateResolver = new ClassLoaderTemplateResolver();
-    //        templateResolver.setPrefix("templates/");
-    //        templateResolver.setCacheable(false);
-    //        templateResolver.setSuffix(".html");
-    //        templateResolver.setTemplateMode("HTML");
-    //        templateResolver.setCharacterEncoding("UTF-8");
-    //        return templateResolver;
-    //    }
 
     @Bean
     @Description("Thymeleaf file system template resolver serving HTML 5")

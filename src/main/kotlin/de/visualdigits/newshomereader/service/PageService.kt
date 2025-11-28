@@ -6,7 +6,9 @@ import de.visualdigits.newshomereader.model.configuration.NewsHomeReader
 import de.visualdigits.newshomereader.model.newsfeed.unified.NewsFeed
 import de.visualdigits.newshomereader.model.newsfeed.unified.NewsItem
 import de.visualdigits.newshomereader.model.page.Page
+import jakarta.servlet.http.Cookie
 import jakarta.servlet.http.HttpServletRequest
+import jakarta.servlet.http.HttpServletResponse
 import org.springframework.stereotype.Service
 import org.springframework.ui.Model
 import java.io.UnsupportedEncodingException
@@ -36,10 +38,14 @@ class PageService(
 
     fun formHideRead(
         model: Model,
-        request: HttpServletRequest
+        request: HttpServletRequest,
+        response: HttpServletResponse
     ): String {
         val currentPage = determineCurrentPage(request)
         val hideRead = request.parameterMap["hideRead"] == null
+
+        addPersistentCookie("hideRead", hideRead, response)
+
         renderMarkup(currentPage, model, hideRead)
 
         return "pagetemplate"
@@ -78,7 +84,7 @@ class PageService(
 
             model.addAttribute("theme", newsHomeReader.theme)
             model.addAttribute("title", newsHomeReader.siteTitle)
-            model.addAttribute("naviMain", mainNaviHtml(theme = newsHomeReader.theme, currentPage = currentPage, hideRead = hideRead))
+            model.addAttribute("naviMain", newsHomeReader.newsFeedsConfiguration?.toHtml(theme = newsHomeReader.theme, currentPage = currentPage, hideRead = hideRead))
 
             val (feed, isMultiFeed) = determineFeed(currentPage)
             if (identifier.isNotEmpty()) {
@@ -131,7 +137,11 @@ class PageService(
         model.addAttribute("feedtitle", sb.toString())
     }
 
-    private fun renderButtons(hideRead: Boolean, path: String, model: Model) {
+    private fun renderButtons(
+        hideRead: Boolean,
+        path: String,
+        model: Model
+    ) {
         val buttons = StringBuilder()
         val checked = if (hideRead) " checked" else ""
         buttons.append("<div id=\"feedtitle-buttons\">")
@@ -171,20 +181,6 @@ class PageService(
         Pair(f, true)
     }
 
-    private fun mainNaviHtml(currentPage: Page? = null, theme: String, hideRead: Boolean): String {
-        val html = StringBuilder()
-        html
-            .append("                        <span class=\"sidebar-title\">Newsfeeds</span>\n")
-            .append(newsHomeReader.newsFeedsConfiguration?.naviMain?.toHtml(
-                currentPage = currentPage,
-                theme = theme,
-                hideRead = hideRead,
-                indent = "                        "
-            ))
-
-        return html.toString()
-    }
-
     private fun determineCurrentPage(request: HttpServletRequest): Page? {
         var requestUri = getRequestUri(request).replace("/news", "").let { ru -> if (ru.startsWith("/")) ru.drop(1) else ru }
         val currentPage = newsHomeReader.newsFeedsConfiguration?.naviMain?.getPage(requestUri)
@@ -200,5 +196,14 @@ class PageService(
             // ignore
         }
         return uri
+    }
+
+    private fun addPersistentCookie(name: String, value: Any, response: HttpServletResponse) {
+        val cookie = Cookie(name, value.toString())
+        cookie.maxAge = Int.MAX_VALUE
+        cookie.secure = false
+        cookie.isHttpOnly = true
+        cookie.path = "/"
+        response.addCookie(cookie)
     }
 }

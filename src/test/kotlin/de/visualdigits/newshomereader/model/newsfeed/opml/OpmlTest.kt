@@ -10,8 +10,9 @@ class OpmlTest {
     @Test
     fun testReadModel() {
         val mapper = XmlMapper.builder().addModule(kotlinModule()).build()
-        val file = File(ClassLoader.getSystemResource("opml/feeder-export-2025-11-26-65586.opml").toURI())
+        val file = File(ClassLoader.getSystemResource("opml/feeder-export-2025-11-28-42199.opml").toURI())
         val opml = mapper.readValue(file, Opml::class.java)
-        println(opml.writeValueAsString())
+        val newsFeedsConfiguration = opml.toNewsFeedsConfiguration()
+        println(newsFeedsConfiguration)
     }
 }
