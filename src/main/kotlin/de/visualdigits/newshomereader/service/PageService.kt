@@ -30,7 +30,7 @@ class PageService(
         model: Model,
         request: HttpServletRequest,
     ): String {
-        val currentPage = determineCurrentPage(request)
+        val currentPage = determineCurrentPage(request, "/news")
         renderMarkup(currentPage, model, identifier = identifier, feedName = feedName, hideRead = hideRead)
 
         return "pagetemplate"
@@ -41,7 +41,7 @@ class PageService(
         request: HttpServletRequest,
         response: HttpServletResponse
     ): String {
-        val currentPage = determineCurrentPage(request)
+        val currentPage = determineCurrentPage(request, "/formHideRead")
         val hideRead = request.parameterMap["hideRead"] == null
 
         addPersistentCookie("hideRead", hideRead, response)
@@ -55,7 +55,7 @@ class PageService(
         model: Model,
         request: HttpServletRequest
     ): String {
-        val currentPage = determineCurrentPage(request)
+        val currentPage = determineCurrentPage(request, "/formMarkAllRead")
         val hideRead = request.parameterMap["hideRead"]?.firstOrNull() == "true"
         val markAllRead = request.parameterMap["markAllRead"] != null
         val markAllUnread = request.parameterMap["markAllUnread"] != null
@@ -92,7 +92,7 @@ class PageService(
                 newsItem?.also { item ->
                     item.read = true
                     item.readFullArticle()
-                    renderArticleHeader(path, hideRead, item, model)
+                    renderArticleTitle(path, hideRead, item, model)
 
                     model.addAttribute("content", item.toHtml(
                         imageProxy = imageProxy,
@@ -103,7 +103,7 @@ class PageService(
                 }
             } else {
                 feed?.also { feed ->
-                    renderButtons(hideRead, path, model)
+                    renderForms(hideRead, path, model)
                     renderFeedTitle(isMultiFeed, path, feed, model)
 
                     model.addAttribute("content", feed.toHtml(
@@ -117,7 +117,19 @@ class PageService(
         }
     }
 
-    private fun renderArticleHeader(path: String, hideRead: Boolean, item: NewsItem, model: Model) {
+    private fun renderFeedTitle(isMultiFeed: Boolean, path: String, feed: NewsFeed, model: Model) {
+        val sb = StringBuilder()
+        if (isMultiFeed) {
+            sb.append("<div id=\"feedtitle-path\">${path.replace("/", " / ")}</div>")
+        } else {
+            sb.append("<div id=\"feedtitle-path\"><a class=\"title\" href=\"${feed.link}\" alt=\"Webseite besuchen\" title=\"Webseite besuchen\" target=\"_blank\">${feed.title}</a></div>")
+        }
+        sb.append("<div id=\"feedtitle-title\">${feed.description ?: ""}</div>")
+        sb.append("<div id=\"feedtitle-date\"></div>")
+        model.addAttribute("feedtitle", sb.toString())
+    }
+
+    private fun renderArticleTitle(path: String, hideRead: Boolean, item: NewsItem, model: Model) {
         val sb = StringBuilder()
         sb.append("<div id=\"feedtitle-path\"><a class=\"title\" href=\"/news/$path?hideRead=$hideRead&\" alt=\"Zurück zum Feed\" title=\"Zurück zum Feed\">${path.replace("/", " / ")}</a><span class=\"feedName\">${item.feedName}</span></div>")
         sb.append("<div id=\"feedtitle-title\"><a class=\"title\" href=\"${item.link}\" alt=\"Original Artikel aufrufen.\" title=\"Original Artikel aufrufen.\" target=\"_blank\">${item.title}</a></div>")
@@ -125,19 +137,7 @@ class PageService(
         model.addAttribute("feedtitle", sb.toString())
     }
 
-    private fun renderFeedTitle(isMultiFeed: Boolean, path: String, feed: NewsFeed, model: Model) {
-        val sb = StringBuilder()
-        if (isMultiFeed) {
-            sb.append("<div id=\"feedtitle-path\">${path.replace("/", " / ")}</div>")
-        } else {
-            sb.append("<div id=\"feedtitle-path\">${feed.title}</div>")
-        }
-        sb.append("<div id=\"feedtitle-title\">${feed.description ?: ""}</div>")
-        sb.append("<div id=\"feedtitle-date\"></div>")
-        model.addAttribute("feedtitle", sb.toString())
-    }
-
-    private fun renderButtons(
+    private fun renderForms(
         hideRead: Boolean,
         path: String,
         model: Model
@@ -160,6 +160,7 @@ class PageService(
         buttons.append("<button type=\"submit\" id=\"markAllRead\" name=\"markAllRead\" value=\"true\">Alle gelesen</button>")
         buttons.append("<button type=\"submit\" id=\"markAllUnread\" name=\"markAllUnread\" value=\"true\">Alle ungelesen</button>")
         buttons.append("<input type=\"hidden\" id=\"hideRead\" name=\"hideRead\" value=\"$hideRead\">")
+        buttons.append("<input type=\"hidden\" id=\"hideRead\" name=\"hideRead\" value=\"$hideRead\">")
         buttons.append("</form>")
 
         buttons.append("</div>")
@@ -181,8 +182,8 @@ class PageService(
         Pair(f, true)
     }
 
-    private fun determineCurrentPage(request: HttpServletRequest): Page? {
-        var requestUri = getRequestUri(request).replace("/news", "").let { ru -> if (ru.startsWith("/")) ru.drop(1) else ru }
+    private fun determineCurrentPage(request: HttpServletRequest, rootPage: String): Page? {
+        var requestUri = getRequestUri(request).replace(rootPage, "").let { ru -> if (ru.startsWith("/")) ru.drop(1) else ru }
         val currentPage = newsHomeReader.newsFeedsConfiguration?.naviMain?.getPage(requestUri)
 
         return currentPage

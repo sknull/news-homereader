@@ -5,30 +5,19 @@ import de.visualdigits.newshomereader.model.newsfeed.unified.NewsFeed
 import io.github.cdimascio.essence.Essence
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.test.context.ActiveProfiles
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URI
 import java.util.zip.GZIPInputStream
 
-class RssModelTest {
-
-    private val  newsItemCache = NewsItemCache()
-
-    @Test
-    fun readImage() {
-        val uri = URI("https://cdn.t3n.de/news/wp-content/uploads/2022/08/apple-macbook-air-m2-48.jpg?class=hero")
-//        val uri2 = URI(
-//            uri.scheme,
-//            uri.userInfo,
-//            uri.host,
-//            uri.port,
-//            uri.path.split("/").joinToString("/") { p -> URLEncoder.encode(p, StandardCharsets.UTF_8) },
-//            uri.query,
-//            uri.fragment
-//        )
-//        println(uri2)
-        val bytes = uri.toURL().readBytes()
-    }
+@SpringBootTest
+@ActiveProfiles("test")
+class RssModelTest @Autowired constructor(
+    private val newsItemCache: NewsItemCache
+)  {
 
     fun URI.get(): ByteArray {
         val connection = createConnection()

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonMapperBuilder
 import jakarta.annotation.PostConstruct
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan
 import org.springframework.context.annotation.Configuration
@@ -18,6 +19,10 @@ import java.nio.file.Paths
 class NewsHomeReader(
     var theme: String = "default",
     var siteTitle: String? = null,
+    var maxItemsInCache: Int = 0,
+    var maxImagesInCache: Int = 0,
+    var maxDownloadRetries: Int = 0,
+    var downloadRetryDelay: Long = 0
 ) {
 
     companion object {

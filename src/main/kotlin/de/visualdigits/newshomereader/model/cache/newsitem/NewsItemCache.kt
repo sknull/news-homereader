@@ -1,17 +1,17 @@
 package de.visualdigits.newshomereader.model.cache.newsitem
 
+import de.visualdigits.newshomereader.model.configuration.NewsHomeReader
 import de.visualdigits.newshomereader.model.newsfeed.unified.NewsItem
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import java.time.OffsetDateTime
 
 @Service
-class NewsItemCache() {
+class NewsItemCache(
+    private val newsHomeReader: NewsHomeReader
+) {
 
     private val itemCache: MutableMap<NewsItemCacheKey, NewsItem> = mutableMapOf()
-
-    @Value("\${newshomereader.max-items-in-cache:100}")
-    private var maxItemsInCache: Int = 0
 
     fun getNewsItem(
         feedName: String,
@@ -46,9 +46,11 @@ class NewsItemCache() {
             .forEach { key -> itemCache.remove(key) }
 
         // remove old items exceeding max item number
-        itemCache.keys
-            .sortedBy { key -> key.updated }
-            .dropLast(maxItemsInCache)
-            .forEach { key -> itemCache.remove((key)) }
+        if (itemCache.size > newsHomeReader.maxItemsInCache) {
+            itemCache.keys
+                .sortedBy { key -> key.updated }
+                .dropLast(newsHomeReader.maxItemsInCache)
+                .forEach { key -> itemCache.remove((key)) }
+        }
     }
 }

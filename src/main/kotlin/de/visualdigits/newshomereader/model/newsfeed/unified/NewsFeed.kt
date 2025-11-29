@@ -73,11 +73,11 @@ class NewsFeed(
      * Returns a copy of this news feed with the item filters of the given page applied.
      */
     fun applyPageFilters(currentPage: Page): NewsFeed {
+        val stopWords = currentPage.filters["title"]?.stopWords?:listOf()
         val filteredItems = items
             .filter { item ->
-                item.title?.split(" ")?.none { word ->
-                    currentPage.filters["title"]?.stopWords?.contains(word) == true
-                } == true
+                val words = item.title?.split(" ")?:listOf()
+                stopWords.none { sw -> words.contains(sw) }
             }
         val filteredFeed = copy(filteredItems)
         return filteredFeed

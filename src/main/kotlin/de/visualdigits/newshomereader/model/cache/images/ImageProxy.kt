@@ -4,11 +4,11 @@ import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.databind.json.JsonMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonMapperBuilder
+import de.visualdigits.newshomereader.model.configuration.NewsHomeReader
 import de.visualdigits.newshomereader.model.configuration.NewsHomeReader.Companion.rootDirectory
 import jakarta.annotation.PostConstruct
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import java.io.File
 import java.net.URI
@@ -18,7 +18,9 @@ import java.time.OffsetDateTime
 import kotlin.io.path.relativeTo
 
 @Service
-class ImageProxy() {
+class ImageProxy(
+    private val newsHomeReader: NewsHomeReader
+) {
 
     private val log: Logger = LoggerFactory.getLogger(javaClass)
 
@@ -30,15 +32,6 @@ class ImageProxy() {
     private val imageCache: MutableMap<ImageInfo, Path?> = mutableMapOf()
 
     private val imageDirectory = Paths.get(rootDirectory.canonicalPath, "resources", "cache", "images").toFile()
-
-    @Value("\${newshomereader.max-images-in-cache:100}")
-    private var maxImagesInCache: Int = 0
-
-    @Value("\${newshomereader.max-download-retries:3}")
-    private var maxDownloadRetries: Int = 0
-
-    @Value("\${newshomereader.download-retry-delay:1000}")
-    private var downloadRetryDelay: Long = 0
 
     @PostConstruct
     fun initialize() {
@@ -66,7 +59,7 @@ class ImageProxy() {
     fun cleanCache() {
         imageCache.keys
             .sortedBy { imageInfo -> imageInfo.downloaded }
-            .dropLast(maxImagesInCache)
+            .dropLast(newsHomeReader.maxImagesInCache)
             .forEach { imageInfo ->
                 File(rootDirectory, "${imageInfo.hashCode}.${imageInfo.extension}").delete()
                 File(rootDirectory, "${imageInfo.hashCode}.json").delete()
@@ -81,7 +74,7 @@ class ImageProxy() {
         val baseName = hashCode.toUInt().toString(16)
         var attempt = 0
         var imageInfo: ImageInfo? = null
-        loop@ while (attempt++ < maxDownloadRetries) {
+        loop@ while (attempt++ < newsHomeReader.maxDownloadRetries) {
             val imageFile = File(imageDirectory, "$baseName.${file.extension}")
             if (!imageFile.exists()) {
                 try {
@@ -92,11 +85,11 @@ class ImageProxy() {
                     break@loop
                 } catch (e: Exception) {
                     log.warn("Could not download image '$uri' with reason '${e.message}' - retrying")
-                    Thread.sleep(downloadRetryDelay)
+                    Thread.sleep(newsHomeReader.downloadRetryDelay)
                 }
             }
         }
-        if (attempt > maxDownloadRetries) {
+        if (attempt > newsHomeReader.maxDownloadRetries) {
             log.error("Downloading image '$uri' finally failed - marking as unavailable")
             imageInfo = ImageInfo(hashCode, uri, OffsetDateTime.now(), null, null, false)
             imageCache[imageInfo] = null // set key to null to avoid future retry attempts

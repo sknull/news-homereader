@@ -1,11 +1,18 @@
 package de.visualdigits.newshomereader.model.newsfeed.unified
 
+import com.fasterxml.jackson.annotation.JsonInclude
+import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.databind.MapperFeature
+import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.module.kotlin.jacksonMapperBuilder
 import de.visualdigits.hybridxml.model.BaseNode
-import de.visualdigits.hybridxml.model.html.Html
-import de.visualdigits.hybridxml.model.polymorphic.PolymorphicNode
 import de.visualdigits.newshomereader.model.cache.images.ImageProxy
 import de.visualdigits.newshomereader.model.cache.newsitem.NewsItemCacheKey
+import de.visualdigits.newshomereader.model.newsfeed.applicationjson.AppJson
+import de.visualdigits.newshomereader.model.newsfeed.applicationjson.DateOnlyDeserializer
 import io.github.cdimascio.essence.Essence
+import org.jsoup.Jsoup
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Component
 import java.net.URI
@@ -32,9 +39,23 @@ class NewsItem(
     val imageCaption: String? = null,
 
     var html: String? = null,
+    var applicationJson: List<AppJson>? = null,
+    var videoItems: List<MediaItem> = listOf(),
+    var audioItems: List<MediaItem> = listOf(),
 
     var read: Boolean = false
 ) : BaseNode<NewsItem>() {
+
+    companion object {
+        val jsonMapper = jacksonMapperBuilder()
+            .enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES)
+            .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
+            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS) // ISODate
+            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+            .defaultPropertyInclusion(JsonInclude.Value.construct(JsonInclude.Include.NON_EMPTY, JsonInclude.Include.NON_EMPTY))
+            .addModule(JavaTimeModule().addDeserializer(OffsetDateTime::class.java, DateOnlyDeserializer()))
+            .build()
+    }
 
     fun cacheKey(): NewsItemCacheKey = NewsItemCacheKey(feedName?:error("No feed name"), identifier?:error("No identifier"), updated)
 
@@ -74,6 +95,16 @@ class NewsItem(
             }
         }
 
+        if (fullArticle) {
+            audioItems.firstOrNull()?.also { vi ->
+                sb.append("<a class=\"audio\" href=\"${vi.url}\" alt=\"Audio abspielen\" title=\"Audio abspielen\" target=\"_blank\">Audio</a>")
+            }
+
+            videoItems.firstOrNull()?.also { vi ->
+                sb.append("<a class=\"video\" href=\"${vi.url}\" alt=\"Video abspielen\" title=\"Video abspielen\" target=\"_blank\">Video</a>")
+            }
+        }
+
         sb.append("<div class=\"news-summary\">$summary</div>\n")
         if (fullArticle) html?.also { h -> sb.append("<div class=\"news-html\">$h</div>\n") }
 
@@ -94,6 +125,18 @@ class NewsItem(
                     }
                 }
                 this.html = html
+
+                this.applicationJson = Jsoup.parse(rawHtml)
+                    .select("script[type=application/ld+json]")
+                    .map { script -> jsonMapper.readValue(script.data(), AppJson::class.java) }
+                audioItems = applicationJson
+                    ?.filter { script -> script.type == "AudioObject" }
+                    ?.map { ao -> ao.toMediaItem() }
+                    ?:listOf()
+                videoItems = applicationJson
+                    ?.filter { script -> script.type == "VideoObject" }
+                    ?.map { vo -> vo.toMediaItem() }
+                    ?:listOf()
             }
         }
     }

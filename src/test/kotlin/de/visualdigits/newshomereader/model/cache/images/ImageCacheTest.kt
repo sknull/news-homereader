@@ -1,9 +1,16 @@
 package de.visualdigits.newshomereader.model.cache.images
 
 import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.test.context.ActiveProfiles
 import java.net.URI
 
-class ImageCacheTest {
+@SpringBootTest
+@ActiveProfiles("test")
+class ImageCacheTest @Autowired constructor(
+    private val imageProxy: ImageProxy
+) {
 
     @Test
     fun urlEncode() {
@@ -14,7 +21,6 @@ class ImageCacheTest {
 
     @Test
     fun testCache() {
-        val imageProxy = ImageProxy()
         val image = imageProxy.getImage("https://images.ndr.de/image/94a73d43-4832-4e9c-a4c6-cd21371d0142/AAABmrVBW4o/AAABmgWmh8Q/16x9-big/prozess-382.jpg?width=1920")
         println(image)
     }
