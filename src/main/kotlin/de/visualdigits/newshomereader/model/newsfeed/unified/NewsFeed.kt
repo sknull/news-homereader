@@ -103,6 +103,7 @@ class NewsFeed(
         imageProxy: ImageProxy,
         multiFeed: Boolean,
         hideRead: Boolean,
+        readItems: MutableSet<UInt> = mutableSetOf(),
         path: String?
     ): String {
         val sb = StringBuilder()
@@ -110,7 +111,7 @@ class NewsFeed(
             .sortedBy { item -> item.updated }
             .reversed()
             .forEach { item ->
-                sb.append(item.toHtml(imageProxy, false, multiFeed, hideRead, path))
+                sb.append(item.toHtml(imageProxy, false, multiFeed, hideRead, readItems, path))
             }
 
         return sb.toString()

@@ -3,7 +3,7 @@ package de.visualdigits.newshomereader.model.cache.newsitem
 import java.time.OffsetDateTime
 
 data class NewsItemCacheKey(
-    val hashCode: Int,
+    val newsItemHashCode: UInt,
     val updated: OffsetDateTime? = null,
 ) {
 
@@ -13,14 +13,14 @@ data class NewsItemCacheKey(
 
         other as NewsItemCacheKey
 
-        if (hashCode != other.hashCode) return false
+        if (newsItemHashCode != other.newsItemHashCode) return false
         if (updated?.toInstant()?.toEpochMilli() != other.updated?.toInstant()?.toEpochMilli()) return false
 
         return true
     }
 
     override fun hashCode(): Int {
-        var result = hashCode
+        var result = newsItemHashCode.toInt()
         result = 31 * result + (updated?.toInstant()?.toEpochMilli()?.hashCode()?:0)
         return result
     }

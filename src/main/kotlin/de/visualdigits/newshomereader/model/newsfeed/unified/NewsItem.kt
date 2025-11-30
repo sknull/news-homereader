@@ -41,11 +41,9 @@ class NewsItem(
     var applicationJson: List<AppJson>? = null,
     var videoItems: List<MediaItem> = listOf(),
     var audioItems: List<MediaItem> = listOf(),
-
-    var read: Boolean = false
 ) : BaseNode<NewsItem>() {
 
-    val hashCode: Int = "$feedName$identifier".hashCode()
+    val newsItemHashCode: UInt = "$feedName$identifier".hashCode().toUInt()
 
     companion object {
         val jsonMapper = jacksonMapperBuilder()
@@ -58,17 +56,19 @@ class NewsItem(
             .build()
     }
 
-    fun cacheKey(): NewsItemCacheKey = NewsItemCacheKey(hashCode, updated)
+    fun cacheKey(): NewsItemCacheKey = NewsItemCacheKey(newsItemHashCode, updated)
 
     fun toHtml(
         imageProxy: ImageProxy,
         fullArticle: Boolean,
         isMultiFeed: Boolean,
         hideRead: Boolean,
+        readItems: MutableSet<UInt> = mutableSetOf(),
         path: String? = null
     ): String {
         val sb = StringBuilder()
         val itemClazz = if (fullArticle) "article" else "item"
+        val read = readItems.contains(newsItemHashCode)
         val readClazz = if (read) " read" else ""
         val hideClazz = if (read && hideRead) " hide" else ""
 
@@ -79,13 +79,13 @@ class NewsItem(
             if (isMultiFeed) feedName?.also { fn -> sb.append("<div class=\"feedName\">$fn</div>") }
             sb.append("<div class=\"date\">${updated?.format(DateTimeFormatter.ofPattern("dd.MM.YYYY HH:mm"))}</div>")
             sb.append("<div class=\"title\">")
-            sb.append("<a class=\"title\" href=\"/news/$path?hashCode=$hashCode&hideRead=$hideRead&\" alt=\"Artikel text abrufen.\" title=\"Artikel text abrufen.\">$title</a>\n")
+            sb.append("<a class=\"title\" href=\"/news/$path?hashCode=$newsItemHashCode&hideRead=$hideRead&\" alt=\"Artikel text abrufen.\" title=\"Artikel text abrufen.\">$title</a>\n")
             sb.append("</div>\n")
             sb.append("</div>\n")
         }
 
         image?.also { img ->
-            imageProxy.getImage(hashCode, img)?.also { imgUrl ->
+            imageProxy.getImage(newsItemHashCode, img)?.also { imgUrl ->
                 sb.append("<div class=\"news-image\">")
                 sb.append("<div class=\"image\">")
                 sb.append("<img src=\"$imgUrl\" alt=\"$imageTitle\" title=\"$imageTitle\"/>")

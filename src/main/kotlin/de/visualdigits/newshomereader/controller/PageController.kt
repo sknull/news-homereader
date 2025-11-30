@@ -18,26 +18,32 @@ class PageController(
 
     @GetMapping(value = ["/news/**"], produces = ["application/xhtml+xml"])
     fun page(
-        @RequestParam(name = "hashCode", required = false, defaultValue = "") hashCode: Int? = null,
-        @CookieValue(name = "hideRead", required = false, defaultValue = "false") hideRead: Boolean = false,
+        @RequestParam(name = "hashCode", required = false) hashCode: String? = null,
+        @CookieValue(name = "hideRead", required = false) hideRead: Boolean = false,
+        @CookieValue(name = "readItems", required = false) readItems: String = "",
         model: Model,
-        request: HttpServletRequest
+        request: HttpServletRequest,
+        response: HttpServletResponse
     ): String? {
         return pageService.renderPage(
-            hashCode = hashCode,
+            hashCode = hashCode?.toUInt(),
             hideRead = hideRead,
+            readItems = readItems.toMutableSet(),
             model = model,
-            request = request
+            request = request,
+            response = response
         )
     }
 
     @PostMapping(value = ["/formHideRead/**"], produces = ["application/xhtml+xml"])
     fun formHideRead(
+        @CookieValue(name = "readItems", required = false) readItems: String = "",
         model: Model,
         request: HttpServletRequest,
         response: HttpServletResponse
     ): String {
         return pageService.formHideRead(
+            readItems = readItems.toMutableSet(),
             model = model,
             request = request,
             response = response
@@ -46,13 +52,20 @@ class PageController(
 
     @PostMapping(value = ["/formMarkAllRead/**"], produces = ["application/xhtml+xml"])
     fun formMarkAllRead(
+        @CookieValue(name = "readItems", required = false) readItems: String = "",
         model: Model,
-        request: HttpServletRequest
+        request: HttpServletRequest,
+        response: HttpServletResponse
     ): String {
         return pageService.formMarkAllRead(
+            readItems = readItems.toMutableSet(),
             model = model,
-            request = request
+            request = request,
+            response = response
         )
     }
 }
 
+private fun String.toMutableSet(): MutableSet<UInt> {
+    return this.split("/").mapNotNull { it.trim().let { n -> if (n.isNotEmpty()) n.toUInt() else null } }.toMutableSet()
+}

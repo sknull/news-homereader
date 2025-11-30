@@ -47,7 +47,7 @@ class ImageProxy(
             }
     }
 
-    fun getImage(newItemHashCode: Int, uri: String): String? {
+    fun getImage(newItemHashCode: UInt, uri: String): String? {
         var imageInfo: ImageInfo? = ImageInfo(newItemHashCode, uri, OffsetDateTime.now(), "", null, false)
         if (!imageCache.contains(imageInfo)) {
             imageInfo = downloadImage(newItemHashCode, uri)
@@ -67,10 +67,10 @@ class ImageProxy(
             }
     }
 
-    private fun downloadImage(newItemHashCode: Int, uri: String): ImageInfo? {
+    private fun downloadImage(newItemHashCode: UInt, uri: String): ImageInfo? {
         val url = URI(uri.replace(" ", "+")).toURL()
         val file = File(url.path.replace("+", " "))
-        val baseName = newItemHashCode.toUInt().toString(16)
+        val baseName = newItemHashCode.toString()
         var attempt = 0
         var imageInfo: ImageInfo? = null
         loop@ while (attempt++ < newsHomeReader.maxDownloadRetries) {

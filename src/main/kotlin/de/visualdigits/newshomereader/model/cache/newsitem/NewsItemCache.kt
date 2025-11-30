@@ -13,16 +13,18 @@ class NewsItemCache(
     private val itemCache: MutableMap<NewsItemCacheKey, NewsItem> = mutableMapOf()
 
     fun getNewsItem(
-        hashCode: Int,
+        hashCode: UInt,
         updated: OffsetDateTime? = null
     ): NewsItem? {
         return updated
             ?.let { u -> itemCache[NewsItemCacheKey(hashCode, u)] }
             ?:let { itemCache.keys // case when updated is unknown and therefore null
-                .find { existingKey -> existingKey.hashCode == hashCode }
+                .find { existingKey -> existingKey.newsItemHashCode == hashCode }
                 ?.let { existingKey -> itemCache[existingKey] }
             }
     }
+
+    fun getNewsItemHashCodes(): Set<UInt> = itemCache.keys.map { k -> k.newsItemHashCode }.toSet()
 
     fun cacheNewsItem(newsItem: NewsItem): NewsItem {
         val newKey = newsItem.cacheKey()
@@ -39,7 +41,7 @@ class NewsItemCache(
     fun cleanupCache() {
         // remove older duplicates
         itemCache.keys
-            .groupBy { key -> key.hashCode }
+            .groupBy { key -> key.newsItemHashCode }
             .flatMap { (_, keys) -> keys.sortedBy { key -> key.updated?.toInstant()?.toEpochMilli() ?: 0 }.dropLast(1) }
             .forEach { key -> itemCache.remove(key) }
 

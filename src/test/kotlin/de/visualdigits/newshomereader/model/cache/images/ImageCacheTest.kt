@@ -21,7 +21,7 @@ class ImageCacheTest @Autowired constructor(
 
     @Test
     fun testCache() {
-        val image = imageProxy.getImage(4711, "https://images.ndr.de/image/94a73d43-4832-4e9c-a4c6-cd21371d0142/AAABmrVBW4o/AAABmgWmh8Q/16x9-big/prozess-382.jpg?width=1920")
+        val image = imageProxy.getImage(4711U, "https://images.ndr.de/image/94a73d43-4832-4e9c-a4c6-cd21371d0142/AAABmrVBW4o/AAABmgWmh8Q/16x9-big/prozess-382.jpg?width=1920")
         println(image)
     }
 }

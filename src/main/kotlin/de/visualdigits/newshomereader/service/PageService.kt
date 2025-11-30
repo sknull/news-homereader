@@ -24,18 +24,21 @@ class PageService(
 ) {
 
     fun renderPage(
-        hashCode: Int? = null,
+        hashCode: UInt? = null,
         hideRead: Boolean = false,
+        readItems: MutableSet<UInt> = mutableSetOf(),
         model: Model,
         request: HttpServletRequest,
+        response: HttpServletResponse
     ): String {
         val currentPage = determineCurrentPage(request, "/news")
-        renderMarkup(currentPage, model, hashCode = hashCode, hideRead = hideRead)
+        renderMarkup(currentPage, model, hideRead, readItems, hashCode, response)
 
-        return "pagetemplate"
+        return "page"
     }
 
     fun formHideRead(
+        readItems: MutableSet<UInt> = mutableSetOf(),
         model: Model,
         request: HttpServletRequest,
         response: HttpServletResponse
@@ -43,16 +46,18 @@ class PageService(
         val currentPage = determineCurrentPage(request, "/formHideRead")
         val hideRead = request.parameterMap["hideRead"] == null
 
-        addPersistentCookie("hideRead", hideRead, response)
+        addPersistentCookie("hideRead", hideRead.toString(), response)
 
-        renderMarkup(currentPage, model, hideRead)
+        renderMarkup(currentPage, model, hideRead, readItems, response = response)
 
-        return "pagetemplate"
+        return "page"
     }
 
     fun formMarkAllRead(
+        readItems: MutableSet<UInt> = mutableSetOf(),
         model: Model,
-        request: HttpServletRequest
+        request: HttpServletRequest,
+        response: HttpServletResponse
     ): String {
         val currentPage = determineCurrentPage(request, "/formMarkAllRead")
         val hideRead = request.parameterMap["hideRead"]?.firstOrNull() == "true"
@@ -61,21 +66,24 @@ class PageService(
         if (currentPage != null) {
             val (feed, _) = determineFeed(currentPage)
             if (markAllRead) {
-                feed?.items?.forEach { item -> item.read = true }
+                readItems.addAll(feed?.items?.map { item -> item.newsItemHashCode }?:listOf())
             } else if (markAllUnread) {
-                feed?.items?.forEach { item -> item.read = false }
+                readItems.removeAll(feed?.items?.map { item -> item.newsItemHashCode }?:listOf())
             }
+            addPersistentCookie("readItems", readItems.joinToString("/"), response)
         }
-        renderMarkup(currentPage, model, hideRead)
+        renderMarkup(currentPage, model, hideRead, readItems, response = response)
 
-        return "pagetemplate"
+        return "page"
     }
 
     private fun renderMarkup(
         currentPage: Page?,
         model: Model,
         hideRead: Boolean = false,
-        hashCode: Int? = null,
+        readItems: MutableSet<UInt> = mutableSetOf(),
+        hashCode: UInt? = null,
+        response: HttpServletResponse
     ) {
         if (currentPage != null) {
             val path = currentPage.path()
@@ -86,9 +94,10 @@ class PageService(
 
             val (feed, isMultiFeed) = determineFeed(currentPage)
             if (hashCode != null) {
+                readItems.add(hashCode)
+                addPersistentCookie("readItems", readItems.joinToString("/"), response)
                 val newsItem = newsItemCache.getNewsItem(hashCode)
                 newsItem?.also { item ->
-                    item.read = true
                     item.readFullArticle()
                     renderArticleTitle(path, hideRead, item, model)
                     model.addAttribute(
@@ -96,7 +105,8 @@ class PageService(
                             imageProxy = imageProxy,
                             fullArticle = true,
                             isMultiFeed = isMultiFeed,
-                            hideRead = hideRead
+                            hideRead = hideRead,
+                            readItems = readItems
                         )
                     )
                 }
@@ -109,11 +119,21 @@ class PageService(
                         imageProxy = imageProxy,
                         multiFeed = isMultiFeed,
                         hideRead = hideRead,
+                        readItems = readItems,
                         path = path
                     ))
                 }
             }
+
+            cleanupReadItems(readItems, response)
         }
+    }
+
+    private fun cleanupReadItems(readItems: MutableSet<UInt>, response: HttpServletResponse) {
+        val unknownHashes = readItems.toMutableSet()
+        unknownHashes.removeAll(newsItemCache.getNewsItemHashCodes())
+        readItems.removeAll(unknownHashes)
+        addPersistentCookie("readItems", readItems.joinToString("/"), response)
     }
 
     private fun renderFeedTitle(isMultiFeed: Boolean, path: String, feed: NewsFeed, model: Model) {
@@ -198,8 +218,8 @@ class PageService(
         return uri
     }
 
-    private fun addPersistentCookie(name: String, value: Any, response: HttpServletResponse) {
-        val cookie = Cookie(name, value.toString())
+    private fun addPersistentCookie(name: String, value: String, response: HttpServletResponse) {
+        val cookie = Cookie(name, value)
         cookie.maxAge = Int.MAX_VALUE
         cookie.secure = false
         cookie.isHttpOnly = true
