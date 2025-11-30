@@ -1,5 +1,6 @@
 package de.visualdigits.newshomereader.model.newsfeed.unified
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.MapperFeature
@@ -13,17 +14,15 @@ import de.visualdigits.newshomereader.model.newsfeed.applicationjson.AppJson
 import de.visualdigits.newshomereader.model.newsfeed.applicationjson.DateOnlyDeserializer
 import io.github.cdimascio.essence.Essence
 import org.jsoup.Jsoup
-import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Component
 import java.net.URI
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 
 @Component
-@Cacheable("newsItem")
+@JsonIgnoreProperties("hashCode")
 class NewsItem(
     val feedName: String? = null,
-
     val identifier: String? = null,
 
     val published: OffsetDateTime? = null,
@@ -46,6 +45,8 @@ class NewsItem(
     var read: Boolean = false
 ) : BaseNode<NewsItem>() {
 
+    val hashCode: Int = "$feedName$identifier".hashCode()
+
     companion object {
         val jsonMapper = jacksonMapperBuilder()
             .enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES)
@@ -57,7 +58,7 @@ class NewsItem(
             .build()
     }
 
-    fun cacheKey(): NewsItemCacheKey = NewsItemCacheKey(feedName?:error("No feed name"), identifier?:error("No identifier"), updated)
+    fun cacheKey(): NewsItemCacheKey = NewsItemCacheKey(hashCode, updated)
 
     fun toHtml(
         imageProxy: ImageProxy,
@@ -78,13 +79,13 @@ class NewsItem(
             if (isMultiFeed) feedName?.also { fn -> sb.append("<div class=\"feedName\">$fn</div>") }
             sb.append("<div class=\"date\">${updated?.format(DateTimeFormatter.ofPattern("dd.MM.YYYY HH:mm"))}</div>")
             sb.append("<div class=\"title\">")
-            sb.append("<a class=\"title\" href=\"/news/$path?feedName=$feedName&identifier=$identifier&hideRead=$hideRead&\" alt=\"Artikel text abrufen.\" title=\"Artikel text abrufen.\">$title</a>\n")
+            sb.append("<a class=\"title\" href=\"/news/$path?hashCode=$hashCode&hideRead=$hideRead&\" alt=\"Artikel text abrufen.\" title=\"Artikel text abrufen.\">$title</a>\n")
             sb.append("</div>\n")
             sb.append("</div>\n")
         }
 
         image?.also { img ->
-            imageProxy.getImage(img)?.also { imgUrl ->
+            imageProxy.getImage(hashCode, img)?.also { imgUrl ->
                 sb.append("<div class=\"news-image\">")
                 sb.append("<div class=\"image\">")
                 sb.append("<img src=\"$imgUrl\" alt=\"$imageTitle\" title=\"$imageTitle\"/>")
@@ -96,6 +97,7 @@ class NewsItem(
         }
 
         if (fullArticle) {
+            sb.append("<div class=\"media-buttons\">")
             audioItems.firstOrNull()?.also { vi ->
                 sb.append("<a class=\"audio\" href=\"${vi.url}\" alt=\"Audio abspielen\" title=\"Audio abspielen\" target=\"_blank\">Audio</a>")
             }
@@ -103,6 +105,7 @@ class NewsItem(
             videoItems.firstOrNull()?.also { vi ->
                 sb.append("<a class=\"video\" href=\"${vi.url}\" alt=\"Video abspielen\" title=\"Video abspielen\" target=\"_blank\">Video</a>")
             }
+            sb.append("</diV>")
         }
 
         sb.append("<div class=\"news-summary\">$summary</div>\n")

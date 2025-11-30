@@ -2,7 +2,6 @@ package de.visualdigits.newshomereader.model.cache.newsitem
 
 import de.visualdigits.newshomereader.model.configuration.NewsHomeReader
 import de.visualdigits.newshomereader.model.newsfeed.unified.NewsItem
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import java.time.OffsetDateTime
 
@@ -14,14 +13,13 @@ class NewsItemCache(
     private val itemCache: MutableMap<NewsItemCacheKey, NewsItem> = mutableMapOf()
 
     fun getNewsItem(
-        feedName: String,
-        identifier: String,
+        hashCode: Int,
         updated: OffsetDateTime? = null
     ): NewsItem? {
         return updated
-            ?.let { u -> itemCache[NewsItemCacheKey(feedName, identifier, u)] }
+            ?.let { u -> itemCache[NewsItemCacheKey(hashCode, u)] }
             ?:let { itemCache.keys // case when updated is unknown and therefore null
-                .find { existingKey -> existingKey.feedName == feedName && existingKey.identifier == identifier }
+                .find { existingKey -> existingKey.hashCode == hashCode }
                 ?.let { existingKey -> itemCache[existingKey] }
             }
     }
@@ -41,7 +39,7 @@ class NewsItemCache(
     fun cleanupCache() {
         // remove older duplicates
         itemCache.keys
-            .groupBy { key -> "${key.feedName}${key.identifier}" }
+            .groupBy { key -> key.hashCode }
             .flatMap { (_, keys) -> keys.sortedBy { key -> key.updated?.toInstant()?.toEpochMilli() ?: 0 }.dropLast(1) }
             .forEach { key -> itemCache.remove(key) }
 

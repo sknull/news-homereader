@@ -3,7 +3,7 @@ package de.visualdigits.newshomereader.model.cache.images
 import java.time.OffsetDateTime
 
 class ImageInfo(
-    val hashCode: Int,
+    val newItemHashCode: Int,
     val uri: String,
     val downloaded: OffsetDateTime,
     val path: String?,

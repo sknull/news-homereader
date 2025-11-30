@@ -24,14 +24,13 @@ class PageService(
 ) {
 
     fun renderPage(
-        feedName: String = "",
-        identifier: String = "",
+        hashCode: Int? = null,
         hideRead: Boolean = false,
         model: Model,
         request: HttpServletRequest,
     ): String {
         val currentPage = determineCurrentPage(request, "/news")
-        renderMarkup(currentPage, model, identifier = identifier, feedName = feedName, hideRead = hideRead)
+        renderMarkup(currentPage, model, hashCode = hashCode, hideRead = hideRead)
 
         return "pagetemplate"
     }
@@ -76,8 +75,7 @@ class PageService(
         currentPage: Page?,
         model: Model,
         hideRead: Boolean = false,
-        identifier: String = "",
-        feedName: String = ""
+        hashCode: Int? = null,
     ) {
         if (currentPage != null) {
             val path = currentPage.path()
@@ -87,19 +85,20 @@ class PageService(
             model.addAttribute("naviMain", newsHomeReader.newsFeedsConfiguration?.toHtml(theme = newsHomeReader.theme, currentPage = currentPage, hideRead = hideRead))
 
             val (feed, isMultiFeed) = determineFeed(currentPage)
-            if (identifier.isNotEmpty()) {
-                val newsItem = newsItemCache.getNewsItem(feedName, identifier)
+            if (hashCode != null) {
+                val newsItem = newsItemCache.getNewsItem(hashCode)
                 newsItem?.also { item ->
                     item.read = true
                     item.readFullArticle()
                     renderArticleTitle(path, hideRead, item, model)
-
-                    model.addAttribute("content", item.toHtml(
-                        imageProxy = imageProxy,
-                        fullArticle = true,
-                        isMultiFeed = isMultiFeed,
-                        hideRead = hideRead
-                    ))
+                    model.addAttribute(
+                        "content", item.toHtml(
+                            imageProxy = imageProxy,
+                            fullArticle = true,
+                            isMultiFeed = isMultiFeed,
+                            hideRead = hideRead
+                        )
+                    )
                 }
             } else {
                 feed?.also { feed ->
@@ -131,7 +130,7 @@ class PageService(
 
     private fun renderArticleTitle(path: String, hideRead: Boolean, item: NewsItem, model: Model) {
         val sb = StringBuilder()
-        sb.append("<div id=\"feedtitle-path\"><a class=\"title\" href=\"/news/$path?hideRead=$hideRead&\" alt=\"Zurück zum Feed\" title=\"Zurück zum Feed\">${path.replace("/", " / ")}</a><span class=\"feedName\">${item.feedName}</span></div>")
+        sb.append("<div id=\"feedtitle-path\"><a class=\"title\" href=\"/news/$path\" alt=\"Zurück zum Feed\" title=\"Zurück zum Feed\">${path.replace("/", " / ")}</a><span class=\"feedName\">${item.feedName}</span></div>")
         sb.append("<div id=\"feedtitle-title\"><a class=\"title\" href=\"${item.link}\" alt=\"Original Artikel aufrufen.\" title=\"Original Artikel aufrufen.\" target=\"_blank\">${item.title}</a></div>")
         sb.append("<div id=\"feedtitle-date\">${item.updated?.format(DateTimeFormatter.ofPattern("dd.MM.YYYY HH:mm"))}</div>")
         model.addAttribute("feedtitle", sb.toString())

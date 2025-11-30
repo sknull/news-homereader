@@ -1,7 +1,6 @@
 package de.visualdigits.newshomereader.controller
 
 import de.visualdigits.newshomereader.service.PageService
-import de.visualdigits.newshomereader.service.ResourceService
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.stereotype.Controller
@@ -19,15 +18,13 @@ class PageController(
 
     @GetMapping(value = ["/news/**"], produces = ["application/xhtml+xml"])
     fun page(
-        @RequestParam(name = "feedName", required = false, defaultValue = "") feedName: String = "",
-        @RequestParam(name = "identifier", required = false, defaultValue = "") identifier: String = "",
+        @RequestParam(name = "hashCode", required = false, defaultValue = "") hashCode: Int? = null,
         @CookieValue(name = "hideRead", required = false, defaultValue = "false") hideRead: Boolean = false,
         model: Model,
         request: HttpServletRequest
     ): String? {
         return pageService.renderPage(
-            feedName = feedName,
-            identifier = identifier,
+            hashCode = hashCode,
             hideRead = hideRead,
             model = model,
             request = request

@@ -47,10 +47,10 @@ class ImageProxy(
             }
     }
 
-    fun getImage(uri: String): String? {
-        var imageInfo: ImageInfo? = ImageInfo(0, uri, OffsetDateTime.now(), "", null, false)
+    fun getImage(newItemHashCode: Int, uri: String): String? {
+        var imageInfo: ImageInfo? = ImageInfo(newItemHashCode, uri, OffsetDateTime.now(), "", null, false)
         if (!imageCache.contains(imageInfo)) {
-            imageInfo = downloadImage(uri)
+            imageInfo = downloadImage(newItemHashCode, uri)
         }
 
         return imageInfo?.let { ii -> imageCache[ii]?.relativeTo(rootDirectory.toPath())?.toString()?.let { path -> "/$path" } }
@@ -61,17 +61,16 @@ class ImageProxy(
             .sortedBy { imageInfo -> imageInfo.downloaded }
             .dropLast(newsHomeReader.maxImagesInCache)
             .forEach { imageInfo ->
-                File(rootDirectory, "${imageInfo.hashCode}.${imageInfo.extension}").delete()
-                File(rootDirectory, "${imageInfo.hashCode}.json").delete()
+                File(rootDirectory, "${imageInfo.newItemHashCode}.${imageInfo.extension}").delete()
+                File(rootDirectory, "${imageInfo.newItemHashCode}.json").delete()
                 imageCache.remove(imageInfo)
             }
     }
 
-    private fun downloadImage(uri: String): ImageInfo? {
+    private fun downloadImage(newItemHashCode: Int, uri: String): ImageInfo? {
         val url = URI(uri.replace(" ", "+")).toURL()
         val file = File(url.path.replace("+", " "))
-        val hashCode = file.nameWithoutExtension.hashCode()
-        val baseName = hashCode.toUInt().toString(16)
+        val baseName = newItemHashCode.toUInt().toString(16)
         var attempt = 0
         var imageInfo: ImageInfo? = null
         loop@ while (attempt++ < newsHomeReader.maxDownloadRetries) {
@@ -79,7 +78,7 @@ class ImageProxy(
             if (!imageFile.exists()) {
                 try {
                     url.openStream().use { ins -> imageFile.outputStream().use { outs -> ins.transferTo(outs) } }
-                    imageInfo = ImageInfo(hashCode, uri, OffsetDateTime.now(), imageFile.canonicalPath, file.extension, true)
+                    imageInfo = ImageInfo(newItemHashCode, uri, OffsetDateTime.now(), imageFile.canonicalPath, file.extension, true)
                     File(imageDirectory, "$baseName.json").writeText(mapper.writeValueAsString(imageInfo))
                     imageCache[imageInfo] = imageFile.toPath()
                     break@loop
@@ -91,7 +90,7 @@ class ImageProxy(
         }
         if (attempt > newsHomeReader.maxDownloadRetries) {
             log.error("Downloading image '$uri' finally failed - marking as unavailable")
-            imageInfo = ImageInfo(hashCode, uri, OffsetDateTime.now(), null, null, false)
+            imageInfo = ImageInfo(newItemHashCode, uri, OffsetDateTime.now(), null, null, false)
             imageCache[imageInfo] = null // set key to null to avoid future retry attempts
             File(imageDirectory, "$baseName.json").writeText(mapper.writeValueAsString(imageInfo))
         }
