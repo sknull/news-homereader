@@ -14,7 +14,7 @@ import org.springframework.ui.Model
 import java.io.UnsupportedEncodingException
 import java.net.URI
 import java.net.URLDecoder
-import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeFormatter.ofPattern
 
 @Service
 class PageService(
@@ -32,7 +32,7 @@ class PageService(
         response: HttpServletResponse
     ): String {
         val currentPage = determineCurrentPage(request, "/news")
-        renderMarkup(currentPage, model, hideRead, readItems, hashCode, response)
+        renderPageModel(currentPage, model, hideRead, readItems, hashCode, response)
 
         return "page"
     }
@@ -48,7 +48,7 @@ class PageService(
 
         addPersistentCookie("hideRead", hideRead.toString(), response)
 
-        renderMarkup(currentPage, model, hideRead, readItems, response = response)
+        renderPageModel(currentPage, model, hideRead, readItems, response = response)
 
         return "page"
     }
@@ -72,12 +72,12 @@ class PageService(
             }
             addPersistentCookie("readItems", readItems.joinToString("/"), response)
         }
-        renderMarkup(currentPage, model, hideRead, readItems, response = response)
+        renderPageModel(currentPage, model, hideRead, readItems, response = response)
 
         return "page"
     }
 
-    private fun renderMarkup(
+    private fun renderPageModel(
         currentPage: Page?,
         model: Model,
         hideRead: Boolean = false,
@@ -93,35 +93,20 @@ class PageService(
             model.addAttribute("naviMain", newsHomeReader.newsFeedsConfiguration?.toHtml(theme = newsHomeReader.theme, currentPage = currentPage, hideRead = hideRead))
 
             val (feed, isMultiFeed) = determineFeed(currentPage)
-            if (hashCode != null) {
+            val isArticle = hashCode != null
+            model.addAttribute("isArticle", isArticle)
+            model.addAttribute("isMultiFeed", isMultiFeed)
+            if (isArticle) {
                 readItems.add(hashCode)
                 addPersistentCookie("readItems", readItems.joinToString("/"), response)
-                val newsItem = newsItemCache.getNewsItem(hashCode)
-                newsItem?.also { item ->
-                    item.readFullArticle()
-                    renderArticleTitle(path, hideRead, item, model)
-                    model.addAttribute(
-                        "content", item.toHtml(
-                            imageProxy = imageProxy,
-                            fullArticle = true,
-                            isMultiFeed = isMultiFeed,
-                            hideRead = hideRead,
-                            readItems = readItems
-                        )
-                    )
-                }
+                newsItemCache
+                    .getNewsItem(hashCode)
+                    ?.also { item ->
+                        renderArticleModel(item, model, path, hideRead, readItems)
+                    }
             } else {
                 feed?.also { feed ->
-                    renderForms(hideRead, path, model)
-                    renderFeedTitle(isMultiFeed, path, feed, model)
-
-                    model.addAttribute("content", feed.toHtml(
-                        imageProxy = imageProxy,
-                        multiFeed = isMultiFeed,
-                        hideRead = hideRead,
-                        readItems = readItems,
-                        path = path
-                    ))
+                    renderFeedModel(model, path, hideRead, isMultiFeed, feed, readItems)
                 }
             }
 
@@ -129,61 +114,50 @@ class PageService(
         }
     }
 
+    private fun renderArticleModel(item: NewsItem, model: Model, path: String, hideRead: Boolean, readItems: MutableSet<UInt>) {
+        model.addAttribute("path", "/news/$path")
+        model.addAttribute("pathText", path.replace("/", " / "))
+        model.addAttribute("itemLink", item.link)
+        model.addAttribute("itemTitle", item.title)
+        model.addAttribute("feedtitleDate", item.updated?.format(ofPattern("dd.MM.YYYY HH:mm")))
+        model.addAttribute(
+            "newsItem", item.toModel(
+                imageProxy = imageProxy,
+                isArticle = true,
+                hideRead = hideRead,
+                readItems = readItems
+            )
+        )
+    }
+
+    private fun renderFeedModel(model: Model, path: String, hideRead: Boolean, isMultiFeed: Boolean, feed: NewsFeed, readItems: MutableSet<UInt>) {
+        model.addAttribute("formPath", "/formHideRead/$path")
+        model.addAttribute("hideRead", hideRead)
+        if (isMultiFeed) {
+            model.addAttribute("isFeedTitleLink", false)
+        } else {
+            model.addAttribute("isFeedTitleLink", true)
+        }
+        model.addAttribute("pathText", path.replace("/", " / "))
+        model.addAttribute("feedLink", feed.link)
+        model.addAttribute("feedTitle", feed.title)
+        model.addAttribute("feedtitleTitle", feed.description ?: "")
+        model.addAttribute("feedtitleDate", "")
+        model.addAttribute(
+            "newsItems", feed.items
+                .sortedBy { item -> item.updated }
+                .reversed()
+                .map { item ->
+                    item.toModel(imageProxy, false, hideRead, readItems, path)
+                }
+        )
+    }
+
     private fun cleanupReadItems(readItems: MutableSet<UInt>, response: HttpServletResponse) {
         val unknownHashes = readItems.toMutableSet()
         unknownHashes.removeAll(newsItemCache.getNewsItemHashCodes())
         readItems.removeAll(unknownHashes)
         addPersistentCookie("readItems", readItems.joinToString("/"), response)
-    }
-
-    private fun renderFeedTitle(isMultiFeed: Boolean, path: String, feed: NewsFeed, model: Model) {
-        val sb = StringBuilder()
-        if (isMultiFeed) {
-            sb.append("<div id=\"feedtitle-path\">${path.replace("/", " / ")}</div>")
-        } else {
-            sb.append("<div id=\"feedtitle-path\"><a class=\"title\" href=\"${feed.link}\" alt=\"Webseite besuchen\" title=\"Webseite besuchen\" target=\"_blank\">${feed.title}</a></div>")
-        }
-        sb.append("<div id=\"feedtitle-title\">${feed.description ?: ""}</div>")
-        sb.append("<div id=\"feedtitle-date\"></div>")
-        model.addAttribute("feedtitle", sb.toString())
-    }
-
-    private fun renderArticleTitle(path: String, hideRead: Boolean, item: NewsItem, model: Model) {
-        val sb = StringBuilder()
-        sb.append("<div id=\"feedtitle-path\"><a class=\"title\" href=\"/news/$path\" alt=\"Zurück zum Feed\" title=\"Zurück zum Feed\">${path.replace("/", " / ")}</a><span class=\"feedName\">${item.feedName}</span></div>")
-        sb.append("<div id=\"feedtitle-title\"><a class=\"title\" href=\"${item.link}\" alt=\"Original Artikel aufrufen.\" title=\"Original Artikel aufrufen.\" target=\"_blank\">${item.title}</a></div>")
-        sb.append("<div id=\"feedtitle-date\">${item.updated?.format(DateTimeFormatter.ofPattern("dd.MM.YYYY HH:mm"))}</div>")
-        model.addAttribute("feedtitle", sb.toString())
-    }
-
-    private fun renderForms(
-        hideRead: Boolean,
-        path: String,
-        model: Model
-    ) {
-        val buttons = StringBuilder()
-        val checked = if (hideRead) " checked" else ""
-        buttons.append("<div id=\"feedtitle-buttons\">")
-
-        buttons.append("<form id=\"formHideRead\" action=\"/formHideRead/$path\" method=\"POST\">")
-        buttons.append("<div class=\"container\">")
-        buttons.append("<span class=\"label\">Gelesene verstecken</span>")
-        buttons.append("<label class=\"switch\">")
-        buttons.append("<input type=\"checkbox\" id=\"hideRead\" name=\"hideRead\" value=\"true\"$checked>")
-        buttons.append("<span class=\"slider\" onclick=\"javascript:formHideRead.submit();\"></span>")
-        buttons.append("</label>")
-        buttons.append("</div>")
-        buttons.append("</form>")
-
-        buttons.append("<form id=\"formMarkAllRead\" action=\"/formMarkAllRead/$path\" method=\"POST\">")
-        buttons.append("<button type=\"submit\" id=\"markAllRead\" name=\"markAllRead\" value=\"true\">Alle gelesen</button>")
-        buttons.append("<button type=\"submit\" id=\"markAllUnread\" name=\"markAllUnread\" value=\"true\">Alle ungelesen</button>")
-        buttons.append("<input type=\"hidden\" id=\"hideRead\" name=\"hideRead\" value=\"$hideRead\">")
-        buttons.append("<input type=\"hidden\" id=\"hideRead\" name=\"hideRead\" value=\"$hideRead\">")
-        buttons.append("</form>")
-
-        buttons.append("</div>")
-        model.addAttribute("buttons", buttons.toString())
     }
 
     private fun determineFeed(currentPage: Page): Pair<NewsFeed?, Boolean> = if (currentPage.isLeaf()) {

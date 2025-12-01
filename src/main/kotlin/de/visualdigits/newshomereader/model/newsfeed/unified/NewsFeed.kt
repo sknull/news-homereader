@@ -13,6 +13,7 @@ import org.jsoup.Jsoup
 import org.jsoup.parser.Parser
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.springframework.ui.Model
 import java.io.File
 import java.net.URI
 import java.time.OffsetDateTime
@@ -97,24 +98,6 @@ class NewsFeed(
             keywords,
             items ?: this.items
         )
-    }
-
-    fun toHtml(
-        imageProxy: ImageProxy,
-        multiFeed: Boolean,
-        hideRead: Boolean,
-        readItems: MutableSet<UInt> = mutableSetOf(),
-        path: String?
-    ): String {
-        val sb = StringBuilder()
-        items
-            .sortedBy { item -> item.updated }
-            .reversed()
-            .forEach { item ->
-                sb.append(item.toHtml(imageProxy, false, multiFeed, hideRead, readItems, path))
-            }
-
-        return sb.toString()
     }
 
     override fun equals(other: Any?): Boolean {

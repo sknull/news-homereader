@@ -51,8 +51,6 @@ html, body {
 }
 
 body {
-	background: transparent url(../images/bg_hamburg.jpg) top left no-repeat;
-	background-size: cover;
 	overflow: hidden;
 }
 
@@ -83,7 +81,7 @@ h1, h2, h3, h4 {
 #main {
 	display: grid;
 	grid-template-rows: auto;
-	grid-template-columns: calc(100% - 1680px) 1680px;
+	grid-template-columns: 200px calc(100% - 200px);
 	grid-template-areas: "sidebar canvas";
 }
 
@@ -106,7 +104,7 @@ h1, h2, h3, h4 {
 	height: 100vh;
 	padding: 0px 0px 10px 20px;
 	margin: 0px;
-	background: transparent url(../images/bg_sage_space-theme.jpg) top left no-repeat;
+	background: #00011f url(../images/bg_sage_space-theme.jpg) top left no-repeat;
 	display: grid;
 	grid-template-rows: 120px 100px calc(100% - 220px);
 	grid-template-columns: auto;
@@ -247,17 +245,9 @@ h1, h2, h3, h4 {
 	white-space: nowrap;
 	outline: none;
 
-	height: 50px;
-	padding: 10pt 0px 0px 15px;
-	font-size: 12pt;
-}
-
-@media (min-width: 768pt) {
-  #main-navigation a {
 	height: 22px;
 	padding: 4px 0px 0px 15px;
 	font-size: 9pt;
-  }
 }
 
 #main-navigation a div {
@@ -490,8 +480,35 @@ a.title:hover {
 	margin: 0px 0px 10px 0px;
 }
 
+.news-article .media-buttons {
+	display: block;
+	overflow: hidden;
+}
+
+.news-article a.video, .news-article a.audio {
+	width: 100px;
+	height: 20px;
+	display: block;
+	overflow: hidden;
+	margin: 0px 10px 20px 0px;
+	float: left;
+	background-color: #2774ac;
+	color: #ffffff;
+	border: 0px solid transparent;
+	border-radius: 5px;
+	cursor: pointer;
+	text-align: center;
+}
+
+.news-article a.video:hover, .news-article a.audio:hover {
+	background-color: #ffffff;
+	color: #000000;
+}
+
+
 .news-article .news-summary {
 	width: 50%;
+	display: block;
 	margin: 0px 0px 20px 0px;
 	font-weight: bold;
 	color: #aaccff;

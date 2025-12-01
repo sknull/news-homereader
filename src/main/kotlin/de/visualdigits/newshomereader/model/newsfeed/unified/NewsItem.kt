@@ -37,7 +37,8 @@ class NewsItem(
     val imageTitle: String? = null,
     val imageCaption: String? = null,
 
-    var html: String? = null,
+    var rawHtml: String? = null, // as fetched from URL
+    var html: String? = null, // contains only main article markup
     var applicationJson: List<AppJson>? = null,
     var videoItems: List<MediaItem> = listOf(),
     var audioItems: List<MediaItem> = listOf(),
@@ -58,68 +59,45 @@ class NewsItem(
 
     fun cacheKey(): NewsItemCacheKey = NewsItemCacheKey(newsItemHashCode, updated)
 
-    fun toHtml(
+    fun toModel(
         imageProxy: ImageProxy,
-        fullArticle: Boolean,
-        isMultiFeed: Boolean,
+        isArticle: Boolean,
         hideRead: Boolean,
         readItems: MutableSet<UInt> = mutableSetOf(),
         path: String? = null
-    ): String {
-        val sb = StringBuilder()
-        val itemClazz = if (fullArticle) "article" else "item"
+    ): NewsItemRendered {
+        if (isArticle) readFullArticle()
+
+        val itemClazz = if (isArticle) "article" else "item"
         val read = readItems.contains(newsItemHashCode)
         val readClazz = if (read) " read" else ""
         val hideClazz = if (read && hideRead) " hide" else ""
 
-        sb.append("<div class=\"news-$itemClazz$readClazz$hideClazz\">\n")
+        return NewsItemRendered(
+            hasImage = image != null,
+            hasAudio = audioItems.isNotEmpty(),
+            hasVideo = videoItems.isNotEmpty(),
 
-        if (!fullArticle) {
-            sb.append("<div class=\"news-title\">")
-            if (isMultiFeed) feedName?.also { fn -> sb.append("<div class=\"feedName\">$fn</div>") }
-            sb.append("<div class=\"date\">${updated?.format(DateTimeFormatter.ofPattern("dd.MM.YYYY HH:mm"))}</div>")
-            sb.append("<div class=\"title\">")
-            sb.append("<a class=\"title\" href=\"/news/$path?hashCode=$newsItemHashCode&hideRead=$hideRead&\" alt=\"Artikel text abrufen.\" title=\"Artikel text abrufen.\">$title</a>\n")
-            sb.append("</div>\n")
-            sb.append("</div>\n")
-        }
-
-        image?.also { img ->
-            imageProxy.getImage(newsItemHashCode, img)?.also { imgUrl ->
-                sb.append("<div class=\"news-image\">")
-                sb.append("<div class=\"image\">")
-                sb.append("<img src=\"$imgUrl\" alt=\"$imageTitle\" title=\"$imageTitle\"/>")
-                sb.append("<div class=\"glasspane\"></div>")
-                sb.append("</div>")
-                if (fullArticle) sb.append("<div class=\"caption\">$imageCaption</div>")
-                sb.append("</div>")
-            }
-        }
-
-        if (fullArticle) {
-            sb.append("<div class=\"media-buttons\">")
-            audioItems.firstOrNull()?.also { vi ->
-                sb.append("<a class=\"audio\" href=\"${vi.url}\" alt=\"Audio abspielen\" title=\"Audio abspielen\" target=\"_blank\">Audio</a>")
-            }
-
-            videoItems.firstOrNull()?.also { vi ->
-                sb.append("<a class=\"video\" href=\"${vi.url}\" alt=\"Video abspielen\" title=\"Video abspielen\" target=\"_blank\">Video</a>")
-            }
-            sb.append("</diV>")
-        }
-
-        sb.append("<div class=\"news-summary\">$summary</div>\n")
-        if (fullArticle) html?.also { h -> sb.append("<div class=\"news-html\">$h</div>\n") }
-
-        sb.append("</div>\n")
-
-        return sb.toString()
+            itemClass = "news-$itemClazz$readClazz$hideClazz",
+            feedName = feedName,
+            title = title,
+            path = "/news/$path?hashCode=$newsItemHashCode&hideRead=$hideRead&",
+            updated = updated?.format(DateTimeFormatter.ofPattern("dd.MM.YYYY HH:mm")),
+            imageTitle = imageTitle,
+            imageCaption = imageCaption,
+            imageUrl = image?.let { img -> imageProxy.getImage(newsItemHashCode, img) },
+            audioUrl = audioItems.firstOrNull()?.let { ai -> ai.url },
+            videoUrl = videoItems.firstOrNull()?.let { vi -> vi.url },
+            summary = summary,
+            html = html
+        )
     }
 
     fun readFullArticle() {
         if (html == null) {
             // read only once from website to acoid traffic
             link?.let { l -> URI(l).toURL().readText() }?.let { rawHtml ->
+                this.rawHtml = rawHtml
                 // try to avoid repeating the summary (extraction heuristics are not perfect...)
                 var html = Essence.extract(rawHtml).html
                 summary?.let { s ->
