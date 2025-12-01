@@ -5,9 +5,8 @@ import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.JsonDeserializer
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
-import kotlin.jvm.java
 
-class DateOnlyDeserializer() : JsonDeserializer<OffsetDateTime?>() {
+class OffsetDateTimeHeuristicDeserializer() : JsonDeserializer<OffsetDateTime?>() {
 
     override fun deserialize(
         p: JsonParser,

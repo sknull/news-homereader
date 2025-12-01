@@ -38,7 +38,7 @@ class Item(
     val title: String? = null,
     val link: String? = null,
     val description: String? = null,
-    @field:JacksonXmlElementWrapper(useWrapping = false) @JacksonXmlProperty(localName = "category") val categories: List<Text> = listOf(),
+    @field:JacksonXmlElementWrapper(useWrapping = false) @field:JacksonXmlProperty(localName = "category") val categories: List<Text> = listOf(),
     val isPermaLink: Boolean? = null,
     val enclosure: Enclosure? = null,
     val images: List<Image> = listOf(),

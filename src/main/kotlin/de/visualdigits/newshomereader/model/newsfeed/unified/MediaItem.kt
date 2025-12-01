@@ -11,5 +11,5 @@ class MediaItem(
     val uploadDate: OffsetDateTime? = null,
     val expires: OffsetDateTime? = null,
     val keywords: List<String> = listOf(),
-    val images: List<ImageItem> = listOf()
+    val thumbnails: List<ThumbnailItem> = listOf()
 )

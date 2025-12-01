@@ -27,23 +27,10 @@ class NewsItemCache(
     fun getNewsItemHashCodes(): Set<UInt> = itemCache.keys.map { k -> k.newsItemHashCode }.toSet()
 
     fun cacheNewsItem(newsItem: NewsItem): NewsItem {
+        getNewsItem(newsItem.newsItemHashCode)?.also { oldItem -> itemCache.remove(oldItem.cacheKey()) }
+
         val newKey = newsItem.cacheKey()
         itemCache.putIfAbsent(newKey, newsItem)
-        cleanupCache()
-        return itemCache[newKey] ?: error("Item with key '$newKey' was not put ot the cache")
-    }
-
-    /**
-     * Cleans up the cache:
-     * - removes all older new items where a newer one exists
-     * - uses the given newsFeed (if any) to get rid of entries in the cache which are now longf
-     */
-    fun cleanupCache() {
-        // remove older duplicates
-        itemCache.keys
-            .groupBy { key -> key.newsItemHashCode }
-            .flatMap { (_, keys) -> keys.sortedBy { key -> key.updated?.toInstant()?.toEpochMilli() ?: 0 }.dropLast(1) }
-            .forEach { key -> itemCache.remove(key) }
 
         // remove old items exceeding max item number
         if (itemCache.size > newsHomeReader.maxItemsInCache) {
@@ -52,5 +39,7 @@ class NewsItemCache(
                 .dropLast(newsHomeReader.maxItemsInCache)
                 .forEach { key -> itemCache.remove((key)) }
         }
+
+        return itemCache[newKey] ?: error("Item with key '$newKey' was not put ot the cache")
     }
 }

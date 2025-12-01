@@ -4,20 +4,15 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty
 import de.visualdigits.hybridxml.model.BaseNode
-import de.visualdigits.newshomereader.model.cache.images.ImageProxy
 import de.visualdigits.newshomereader.model.cache.newsitem.NewsItemCache
 import de.visualdigits.newshomereader.model.newsfeed.atom.Feed
 import de.visualdigits.newshomereader.model.newsfeed.rss.Rss
 import de.visualdigits.newshomereader.model.page.Page
 import org.jsoup.Jsoup
 import org.jsoup.parser.Parser
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
-import org.springframework.ui.Model
 import java.io.File
 import java.net.URI
 import java.time.OffsetDateTime
-import kotlin.String
 
 @JsonIgnoreProperties("pageName")
 class NewsFeed(
@@ -32,12 +27,10 @@ class NewsFeed(
     val language: String? = null,
     val keywords: List<String>? = null,
 
-    @JacksonXmlElementWrapper(useWrapping = false) @JacksonXmlProperty(localName = "item") val items: List<NewsItem> = listOf()
+    @field:JacksonXmlElementWrapper(useWrapping = false) @field:JacksonXmlProperty(localName = "item") val items: List<NewsItem> = listOf()
 ) : BaseNode<NewsFeed>() {
 
     companion object {
-
-        private val log: Logger = LoggerFactory.getLogger(javaClass)
 
         fun readValue(newsItemCache: NewsItemCache, feedName: String, uri: URI): NewsFeed {
             return readValue(newsItemCache, feedName, uri.toURL().readText())
@@ -107,14 +100,14 @@ class NewsFeed(
         other as NewsFeed
 
         if (title != other.title) return false
-        if (updated != other.updated) return false
+        if (updated?.toInstant()?.toEpochMilli() != other.updated?.toInstant()?.toEpochMilli()) return false
 
         return true
     }
 
     override fun hashCode(): Int {
         var result = title?.hashCode() ?: 0
-        result = 31 * result + (updated?.hashCode() ?: 0)
+        result = 31 * result + (updated?.toInstant()?.toEpochMilli()?.hashCode() ?: 0)
         return result
     }
 }

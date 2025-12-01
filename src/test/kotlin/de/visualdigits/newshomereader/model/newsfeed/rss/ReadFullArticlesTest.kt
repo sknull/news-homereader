@@ -2,13 +2,10 @@ package de.visualdigits.newshomereader.model.newsfeed.rss
 
 import de.visualdigits.newshomereader.model.cache.newsitem.NewsItemCache
 import de.visualdigits.newshomereader.model.newsfeed.unified.NewsFeed
-import io.github.cdimascio.essence.Essence
-import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
-import java.io.File
 import java.net.URI
 
 @SpringBootTest

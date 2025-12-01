@@ -6,7 +6,7 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlText
 import de.visualdigits.hybridxml.model.BaseNode
 
 class Text(
-    @JacksonXmlProperty(isAttribute = true) val type: String? = null,
+    @field:JacksonXmlProperty(isAttribute = true) val type: String? = null,
 ) : BaseNode<Text>() {
 
     @JacksonXmlText

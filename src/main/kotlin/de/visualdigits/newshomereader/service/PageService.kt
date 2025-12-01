@@ -68,7 +68,7 @@ class PageService(
             if (markAllRead) {
                 readItems.addAll(feed?.items?.map { item -> item.newsItemHashCode }?:listOf())
             } else if (markAllUnread) {
-                readItems.removeAll(feed?.items?.map { item -> item.newsItemHashCode }?:listOf())
+                readItems.removeAll((feed?.items?.map { item -> item.newsItemHashCode }?:listOf()).toSet())
             }
             addPersistentCookie("readItems", readItems.joinToString("/"), response)
         }
@@ -87,7 +87,8 @@ class PageService(
     ) {
         if (currentPage != null) {
             val path = currentPage.path()
-
+            model.addAttribute("path", path)
+            model.addAttribute("pathText", path.replace("/", " / "))
             model.addAttribute("theme", newsHomeReader.theme)
             model.addAttribute("title", newsHomeReader.siteTitle)
             model.addAttribute("naviMain", newsHomeReader.newsFeedsConfiguration?.toHtml(theme = newsHomeReader.theme, currentPage = currentPage, hideRead = hideRead))
@@ -102,7 +103,7 @@ class PageService(
                 newsItemCache
                     .getNewsItem(hashCode)
                     ?.also { item ->
-                        renderArticleModel(item, model, path, hideRead, readItems)
+                        renderArticleModel(item, model, hideRead, readItems)
                     }
             } else {
                 feed?.also { feed ->
@@ -114,9 +115,7 @@ class PageService(
         }
     }
 
-    private fun renderArticleModel(item: NewsItem, model: Model, path: String, hideRead: Boolean, readItems: MutableSet<UInt>) {
-        model.addAttribute("path", "/news/$path")
-        model.addAttribute("pathText", path.replace("/", " / "))
+    private fun renderArticleModel(item: NewsItem, model: Model, hideRead: Boolean, readItems: MutableSet<UInt>) {
         model.addAttribute("itemLink", item.link)
         model.addAttribute("itemTitle", item.title)
         model.addAttribute("feedtitleDate", item.updated?.format(ofPattern("dd.MM.YYYY HH:mm")))
@@ -130,15 +129,9 @@ class PageService(
         )
     }
 
-    private fun renderFeedModel(model: Model, path: String, hideRead: Boolean, isMultiFeed: Boolean, feed: NewsFeed, readItems: MutableSet<UInt>) {
-        model.addAttribute("formPath", "/formHideRead/$path")
+    private fun renderFeedModel(model: Model, path: String, hideRead: Boolean, isMultiFeed: Boolean, feed: NewsFeed, readItems: Set<UInt>) {
         model.addAttribute("hideRead", hideRead)
-        if (isMultiFeed) {
-            model.addAttribute("isFeedTitleLink", false)
-        } else {
-            model.addAttribute("isFeedTitleLink", true)
-        }
-        model.addAttribute("pathText", path.replace("/", " / "))
+        model.addAttribute("isFeedTitleLink", !isMultiFeed)
         model.addAttribute("feedLink", feed.link)
         model.addAttribute("feedTitle", feed.title)
         model.addAttribute("feedtitleTitle", feed.description ?: "")
@@ -176,7 +169,7 @@ class PageService(
     }
 
     private fun determineCurrentPage(request: HttpServletRequest, rootPage: String): Page? {
-        var requestUri = getRequestUri(request).replace(rootPage, "").let { ru -> if (ru.startsWith("/")) ru.drop(1) else ru }
+        val requestUri = getRequestUri(request).replace(rootPage, "").let { ru -> if (ru.startsWith("/")) ru.drop(1) else ru }
         val currentPage = newsHomeReader.newsFeedsConfiguration?.naviMain?.getPage(requestUri)
 
         return currentPage

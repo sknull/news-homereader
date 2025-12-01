@@ -57,14 +57,16 @@ class ImageProxy(
     }
 
     fun cleanCache() {
-        imageCache.keys
-            .sortedBy { imageInfo -> imageInfo.downloaded }
-            .dropLast(newsHomeReader.maxImagesInCache)
-            .forEach { imageInfo ->
-                File(rootDirectory, "${imageInfo.newItemHashCode}.${imageInfo.extension}").delete()
-                File(rootDirectory, "${imageInfo.newItemHashCode}.json").delete()
-                imageCache.remove(imageInfo)
-            }
+        if (imageCache.size > newsHomeReader.maxImagesInCache) {
+            imageCache.keys
+                .sortedBy { imageInfo -> imageInfo.downloaded.toInstant().toEpochMilli() }
+                .dropLast(newsHomeReader.maxImagesInCache)
+                .forEach { imageInfo ->
+                    if (!File(rootDirectory, "${imageInfo.newItemHashCode}.${imageInfo.extension}").delete()) log.warn("Could not delete cached image file for id '${imageInfo.hashCode()}'")
+                    if (!File(rootDirectory, "${imageInfo.newItemHashCode}.json").delete()) log.warn("Could not delete cached json file for id '${imageInfo.hashCode()}'")
+                    imageCache.remove(imageInfo)
+                }
+        }
     }
 
     private fun downloadImage(newItemHashCode: UInt, uri: String): ImageInfo? {

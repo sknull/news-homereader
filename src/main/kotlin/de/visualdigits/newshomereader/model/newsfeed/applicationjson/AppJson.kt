@@ -3,7 +3,7 @@ package de.visualdigits.newshomereader.model.newsfeed.applicationjson
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import de.visualdigits.hybridxml.model.BaseNode
-import de.visualdigits.newshomereader.model.newsfeed.unified.ImageItem
+import de.visualdigits.newshomereader.model.newsfeed.unified.ThumbnailItem
 import de.visualdigits.newshomereader.model.newsfeed.unified.MediaItem
 import java.time.OffsetDateTime
 
@@ -66,8 +66,8 @@ class AppJson(
             uploadDate = uploadDate,
             expires = expires,
             keywords = keywords,
-            images = images.map { io ->
-                ImageItem(
+            thumbnails = images.map { io ->
+                ThumbnailItem(
                     url = io.contentUrl?:io.url,
                     description = io.description,
                     author = io.author,

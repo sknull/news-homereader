@@ -5,13 +5,14 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.MapperFeature
 import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.databind.json.JsonMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonMapperBuilder
 import de.visualdigits.hybridxml.model.BaseNode
 import de.visualdigits.newshomereader.model.cache.images.ImageProxy
 import de.visualdigits.newshomereader.model.cache.newsitem.NewsItemCacheKey
 import de.visualdigits.newshomereader.model.newsfeed.applicationjson.AppJson
-import de.visualdigits.newshomereader.model.newsfeed.applicationjson.DateOnlyDeserializer
+import de.visualdigits.newshomereader.model.newsfeed.applicationjson.OffsetDateTimeHeuristicDeserializer
 import io.github.cdimascio.essence.Essence
 import org.jsoup.Jsoup
 import org.springframework.stereotype.Component
@@ -47,13 +48,13 @@ class NewsItem(
     val newsItemHashCode: UInt = "$feedName$identifier".hashCode().toUInt()
 
     companion object {
-        val jsonMapper = jacksonMapperBuilder()
+        val jsonMapper: JsonMapper = jacksonMapperBuilder()
             .enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES)
             .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS) // ISODate
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
             .defaultPropertyInclusion(JsonInclude.Value.construct(JsonInclude.Include.NON_EMPTY, JsonInclude.Include.NON_EMPTY))
-            .addModule(JavaTimeModule().addDeserializer(OffsetDateTime::class.java, DateOnlyDeserializer()))
+            .addModule(JavaTimeModule().addDeserializer(OffsetDateTime::class.java, OffsetDateTimeHeuristicDeserializer()))
             .build()
     }
 
@@ -63,7 +64,7 @@ class NewsItem(
         imageProxy: ImageProxy,
         isArticle: Boolean,
         hideRead: Boolean,
-        readItems: MutableSet<UInt> = mutableSetOf(),
+        readItems: Set<UInt> = setOf(),
         path: String? = null
     ): NewsItemRendered {
         if (isArticle) readFullArticle()
@@ -74,10 +75,6 @@ class NewsItem(
         val hideClazz = if (read && hideRead) " hide" else ""
 
         return NewsItemRendered(
-            hasImage = image != null,
-            hasAudio = audioItems.isNotEmpty(),
-            hasVideo = videoItems.isNotEmpty(),
-
             itemClass = "news-$itemClazz$readClazz$hideClazz",
             feedName = feedName,
             title = title,
@@ -86,8 +83,8 @@ class NewsItem(
             imageTitle = imageTitle,
             imageCaption = imageCaption,
             imageUrl = image?.let { img -> imageProxy.getImage(newsItemHashCode, img) },
-            audioUrl = audioItems.firstOrNull()?.let { ai -> ai.url },
-            videoUrl = videoItems.firstOrNull()?.let { vi -> vi.url },
+            audioUrl = audioItems.firstOrNull()?.url,
+            videoUrl = videoItems.firstOrNull()?.url,
             summary = summary,
             html = html
         )
@@ -130,7 +127,7 @@ class NewsItem(
 
         if (feedName != other.feedName) return false
         if (identifier != other.identifier) return false
-        if (updated != other.updated) return false
+        if (updated?.toInstant()?.toEpochMilli() != other.updated?.toInstant()?.toEpochMilli()) return false
 
         return true
     }
@@ -138,7 +135,7 @@ class NewsItem(
     override fun hashCode(): Int {
         var result = feedName?.hashCode() ?: 0
         result = 31 * result + (identifier?.hashCode() ?: 0)
-        result = 31 * result + (updated?.hashCode() ?: 0)
+        result = 31 * result + (updated?.toInstant()?.toEpochMilli()?.hashCode() ?: 0)
         return result
     }
 }

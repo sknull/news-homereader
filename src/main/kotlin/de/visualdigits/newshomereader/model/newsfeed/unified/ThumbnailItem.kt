@@ -2,7 +2,7 @@ package de.visualdigits.newshomereader.model.newsfeed.unified
 
 import java.time.OffsetDateTime
 
-class ImageItem(
+class ThumbnailItem(
     val url: String? = null,
     val description: String? = null,
     val author: String? = null,

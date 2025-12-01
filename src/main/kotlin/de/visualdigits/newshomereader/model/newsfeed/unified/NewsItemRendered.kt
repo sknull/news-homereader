@@ -1,10 +1,6 @@
 package de.visualdigits.newshomereader.model.newsfeed.unified
 
 class NewsItemRendered(
-    val hasImage: Boolean,
-    val hasAudio: Boolean,
-    val hasVideo: Boolean,
-
     val itemClass: String,
     val feedName: String?,
     val title: String?,

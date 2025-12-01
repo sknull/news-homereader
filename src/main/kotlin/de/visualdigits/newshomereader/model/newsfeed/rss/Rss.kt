@@ -15,7 +15,7 @@ class Rss(
     val channel: Channel? = null,
     val about: String? = null,
     val image: Image? = null,
-    @JacksonXmlElementWrapper(useWrapping = false) @JacksonXmlProperty(localName = "item") val items: List<Item>? = null
+    @field:JacksonXmlElementWrapper(useWrapping = false) @field:JacksonXmlProperty(localName = "item") val items: List<Item>? = null
 ) : BaseNode<Rss>() {
 
     override fun postProcessXml() {

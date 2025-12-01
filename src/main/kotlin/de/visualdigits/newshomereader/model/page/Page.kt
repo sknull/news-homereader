@@ -33,8 +33,6 @@ class Page(
         return sb.toString()
     }
 
-    fun isRoot(): Boolean = parent == null
-
     fun isLeaf(): Boolean = children.isEmpty()
 
     fun allChildren(children: MutableList<Page> = mutableListOf()): List<Page> {

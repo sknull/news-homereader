@@ -40,10 +40,6 @@ What I have so far:
 
 == Roadmap
 
-Next up
-
-- maintaining the image cache
 - maybe cache stories in the local file system (is this fast enough on a raspberry pi?)
 - periodically download full articles for subscribed news feeds and cache them locally
-- capability to import opml for subscriptions
-- a lot of html markup is rendered within code - this should go into thymeleaf templates
+- capability to import opml for subscriptions (work in progress)
