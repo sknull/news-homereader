@@ -92,6 +92,7 @@ class PageService(
             model.addAttribute("theme", newsHomeReader.theme)
             model.addAttribute("title", newsHomeReader.siteTitle)
             model.addAttribute("naviMain", newsHomeReader.newsFeedsConfiguration?.toHtml(theme = newsHomeReader.theme, currentPage = currentPage, hideRead = hideRead))
+            model.addAttribute("hideRead", hideRead)
 
             val (feed, isMultiFeed) = determineFeed(currentPage)
             val isArticle = hashCode != null
@@ -130,7 +131,6 @@ class PageService(
     }
 
     private fun renderFeedModel(model: Model, path: String, hideRead: Boolean, isMultiFeed: Boolean, feed: NewsFeed, readItems: Set<UInt>) {
-        model.addAttribute("hideRead", hideRead)
         model.addAttribute("isFeedTitleLink", !isMultiFeed)
         model.addAttribute("feedLink", feed.link)
         model.addAttribute("feedTitle", feed.title)
