@@ -1,6 +1,8 @@
 package de.visualdigits.newshomereader.controller
 
+import de.visualdigits.newshomereader.HtmlUtil.getRequestUri
 import de.visualdigits.newshomereader.service.PageService
+import de.visualdigits.newshomereader.service.ResourceService
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.stereotype.Controller
@@ -14,54 +16,70 @@ import org.springframework.web.bind.annotation.RequestParam
 @Controller("PageController")
 class PageController(
     private val pageService: PageService,
+    private val resourceService: ResourceService,
 ) {
 
-    @GetMapping(value = ["/news/**"], produces = ["application/xhtml+xml"])
-    fun page(
+    @GetMapping(value = ["/**"], produces = ["application/xhtml+xml"])
+    fun dispatch(
         @RequestParam(name = "hashCode", required = false) hashCode: String? = null,
         @CookieValue(name = "hideRead", required = false) hideRead: Boolean = false,
         @CookieValue(name = "readItems", required = false) readItems: String = "",
-        model: Model,
         request: HttpServletRequest,
-        response: HttpServletResponse
+        response: HttpServletResponse,
+        model: Model,
     ): String? {
-        return pageService.renderPage(
-            hashCode = hashCode?.toUInt(),
-            hideRead = hideRead,
-            readItems = readItems.toMutableSet(),
-            model = model,
-            request = request,
-            response = response
-        )
+        val requestUri = request.getRequestUri()
+        return if (requestUri.startsWith("/resources")) {
+            resourceService.getResource(request, response)
+            null
+        } else if (requestUri.startsWith("/news/")) {
+            pageService.renderPage(
+                hashCode = hashCode?.toUInt(),
+                hideRead = hideRead,
+                readItems = readItems.toMutableSet(),
+                requestUri = request.getRequestUri().removePrefix("/news/"),
+                response = response,
+                model = model
+            )
+        } else {
+            pageService.renderPage(
+                hashCode = hashCode?.toUInt(),
+                hideRead = hideRead,
+                readItems = readItems.toMutableSet(),
+                requestUri = request.getRequestUri(),
+                response = response,
+                model = model
+            )
+        }
     }
 
     @PostMapping(value = ["/formHideRead/**"], produces = ["application/xhtml+xml"])
     fun formHideRead(
         @CookieValue(name = "readItems", required = false) readItems: String = "",
-        model: Model,
         request: HttpServletRequest,
-        response: HttpServletResponse
+        response: HttpServletResponse,
+        model: Model
     ): String {
         return pageService.formHideRead(
             readItems = readItems.toMutableSet(),
-            model = model,
             request = request,
-            response = response
+            response = response,
+            model = model
         )
     }
 
     @PostMapping(value = ["/formMarkAllRead/**"], produces = ["application/xhtml+xml"])
     fun formMarkAllRead(
         @CookieValue(name = "readItems", required = false) readItems: String = "",
-        model: Model,
         request: HttpServletRequest,
-        response: HttpServletResponse
+        response: HttpServletResponse,
+        model: Model
     ): String {
         return pageService.formMarkAllRead(
             readItems = readItems.toMutableSet(),
-            model = model,
             request = request,
-            response = response
+            response = response,
+            model = model
         )
     }
 }

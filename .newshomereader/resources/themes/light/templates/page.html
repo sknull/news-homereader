@@ -1,49 +1,48 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <!--$:comments-->
 <html xmlns:th="http://www.thymeleaf.org" th:lang="${language}">
-    <head>
-        <meta charset="utf-8"/>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-        <meta name="keywords" th:content="${metaKeywords}"/>
-        <meta name="description" th:content="${metaDescription}"/>
-        <meta property="og:site_name" th:content="${title}"/>
-        <meta property="og:title" th:content="${title}"/>
-        <meta property="og:description" th:content="${metaDescription}"/>
-        <meta property="og:url" th:content="${siteUrl}+'/'"/>
-        <meta property="og:image" th:content="'/resources/themes/'+${theme}+'/images/bg_hamburg.jpg'"/>
-        <link rel="shortcut icon" href="/resources/favicon.ico" type="image/x-icon"/>
-        <title th:text="${title}"></title>
-        <link rel="alternate" type="application/rss+xml" th:title="${title}+' Fotofeed'" th:href="${siteUrl}+'/rss.xml'"/>
-        <span th:utext="${head}" th:remove="tag"></span>
-        <link th:href="'/resources/themes/'+${theme}+'/css/style_screen.css'" type="text/css" rel="stylesheet"/>
-    </head>
-    <body>
-        <div id="main">
-            <section id="sidebar">
-                <nav>
-                    <section id="main-navigation" class="navi">
-<span th:utext="${naviMain}" th:remove="tag"></span>
-                    </section> <!-- main-navigation -->
-    			</nav>
-            </section> <!-- sidebar -->
-			<div id="canvas">
-				<div id="headerform">
-					<div id="dummyheader"></div>
-					<div id="buttons" th:insert="~{fragments :: buttons}"></div>
-				</div> <!-- headerforms -->
-                <th:block th:if="${isArticle}">
-                    <div id="feedtitle" th:replace="~{fragments :: articleTitle}"></div>
-                    <div id="content">
-                        <div th:insert="~{fragments :: newsFeedItem (newsItem=${newsItem})}" th:class="${newsItem.itemClass}"></div>
-                    </div> <!-- content -->
-                </th:block>
-                <th:block th:unless="${isArticle}">
-                    <div id="feedtitle" th:replace="~{fragments :: feedTitle}"></div>
-                    <div id="content">
-                        <div th:each="newsItem : ${newsItems}" th:insert="~{fragments :: newsFeedItem (newsItem=${newsItem})}" th:class="${newsItem.itemClass}"></div>
-                    </div> <!-- content -->
-                </th:block>
-			</div> <!-- canvas -->
-        </div> <!-- main -->
-    </body>
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="keywords" th:content="${metaKeywords}"/>
+    <meta name="description" th:content="${metaDescription}"/>
+    <meta property="og:site_name" th:content="${title}"/>
+    <meta property="og:title" th:content="${title}"/>
+    <meta property="og:description" th:content="${metaDescription}"/>
+    <meta property="og:url" th:content="${siteUrl}+'/'"/>
+    <meta property="og:image" th:content="'/resources/themes/'+${theme}+'/images/bg_hamburg.jpg'"/>
+    <link rel="shortcut icon" th:href="'/resources/themes/'+${theme}+'/images/favicon.ico'" type="image/x-icon"/>
+    <title th:text="${title}"></title>
+    <link rel="alternate" type="application/rss+xml" th:title="${title}+' Fotofeed'" th:href="${siteUrl}+'/rss.xml'"/>
+    <span th:utext="${head}" th:remove="tag"></span>
+    <link th:href="'/resources/themes/'+${theme}+'/css/style_screen.css'" type="text/css" rel="stylesheet"/>
+</head>
+<body>
+<section id="sidebar">
+    <nav>
+        <section id="main-navigation" class="navi">
+            <span th:utext="${naviMain}" th:remove="tag"></span>
+        </section> <!-- main-navigation -->
+    </nav>
+</section> <!-- sidebar -->
+<div id="main">
+    <div id="headerform">
+        <div id="dummyheader"></div>
+        <div id="buttons" th:insert="~{fragments :: buttons}"></div>
+    </div> <!-- headerforms -->
+    <th:block th:if="${isArticle}">
+        <div id="feedtitle" th:replace="~{fragments :: articleTitle}"></div>
+        <div id="content">
+            <div th:insert="~{fragments :: newsFeedItem (newsItem=${newsItem})}" th:class="${newsItem.itemClass}"></div>
+        </div> <!-- content -->
+    </th:block>
+    <th:block th:unless="${isArticle}">
+        <div id="feedtitle" th:replace="~{fragments :: feedTitle}"></div>
+        <div id="content">
+            <div th:each="newsItem : ${newsItems}" th:insert="~{fragments :: newsFeedItem (newsItem=${newsItem})}"
+                 th:class="${newsItem.itemClass}"></div>
+        </div> <!-- content -->
+    </th:block>
+</div> <!-- canvas -->
+</body>
 </html>

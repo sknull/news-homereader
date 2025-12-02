@@ -8,19 +8,18 @@
         - mark all unread button
         -->
         <div id="feedtitle-buttons" th:fragment="buttons">
-            <form id="formHideRead" th:action="${formPath}" method="POST">
+            <form id="formHideRead" th:action="'/formHideRead/' + ${path}" method="POST">
                 <div class="container">
                     <span class="label">Gelesene verstecken</span>
                     <label class="switch">
                         <input type="checkbox" name="hideRead" value="true" th:checked="${hideRead}">
-                        <span class="slider" onclick="javascript:formHideRead.submit();"></span>
+                        <span class="toggleSlider" onclick="javascript:formHideRead.submit();"></span>
                     </label>
                 </div>
             </form>
             <form id="formMarkAllRead" th:action="'/formMarkAllRead/' + ${path}" method="POST">
                 <button type="submit" id="markAllRead" name="markAllRead" value="true">Alle gelesen</button>
                 <button type="submit" id="markAllUnread" name="markAllUnread" value="true">Alle ungelesen</button>
-                <input type="hidden" name="hideRead" th:value="${hideRead}">
             </form>
         </div>
 
@@ -44,7 +43,7 @@
         Page header when a single article is shown.
         -->
         <div id="feedtitle" th:fragment="articleTitle">
-            <div id="feedtitle-path"><a class="title" th:href="${path}" alt="Zurück zum Feed" title="Zurück zum Feed" th:text="${pathText}"></a><span class="feedName" th:text="${feedName}"></span></div>
+            <div id="feedtitle-path"><a class="title" th:href="'/news/' + ${path}" alt="Zurück zum Feed" title="Zurück zum Feed" th:text="${pathText}"></a><span class="feedName" th:text="${feedName}"></span></div>
             <div id="feedtitle-title"><a class="title" th:href="${itemLink}" alt="Original Artikel aufrufen." title="Original Artikel aufrufen." target="_blank" th:text="${itemTitle}"></a></div>
             <div id="feedtitle-date" th:text="${feedtitleDate}"></div>
         </div>
@@ -58,13 +57,7 @@
                 <div class="date" th:text="${newsItem.updated}"></div>
                 <div class="title"><a class="title" th:href="${newsItem.path}" alt="Artikel text abrufen." title="Artikel text abrufen." th:text="${newsItem.title}"></a></div>
             </div>
-            <th:block th:if="${newsItem.hasImage}">
-                <div th:replace="~{fragments :: newsItemImage (newsItem=${newsItem})}"></div>
-            </th:block>
-            <div th:if="${isArticle}" class="media-buttons">
-                <a th:if="${newsItem.hasAudio}" class="audio" th:href="${newsItem.audioUrl}" alt="Audio abspielen" title="Audio abspielen" target="_blank">Audio</a>
-                <a th:if="${newsItem.hasVideo}" class="video" th:href="${newsItem.videoUrl}" alt="Video abspielen" title="Video abspielen" target="_blank">Video</a>
-            </div>
+            <div th:replace="~{fragments :: newsItemImage (newsItem=${newsItem})}"></div>
             <div class="news-summary" th:text="${newsItem.summary}"></div>
             <div th:if="${isArticle}" class="news-html" th:utext="${newsItem.html}"></div>
         </th:block>
@@ -73,11 +66,24 @@
         News item image (if any)
         -->
         <div th:fragment="newsItemImage (newsItem)" class="news-image">
-            <div class="image">
-                <img th:src="${newsItem.imageUrl}" th:alt="${newsItem.imageTitle}" th:title="${newsItem.imageTitle}"/>
+            <video th:if="${newsItem.videoUrl != null}" class="image" th:src="${newsItem.videoUrl}" alt="Video abspielen" title="Video abspielen" target="_blank" controls>
+                <p>
+                    Ihr browser unterstützt keinen Videoplayer.
+                    Das Video befindet sich <a th:if="${newsItem.audioUrl != null}" class="video" th:href="${newsItem.videoUrl}" alt="Video abspielen" title="Video abspielen" target="_blank">hier</a>
+                </p>
+            </video>
+            <div th:if="${newsItem.videoUrl == null && newsItem.imageUrl != null}" class="image">
+                <img th:if="${isArticle}" th:src="${newsItem.imageUrl}" th:alt="${newsItem.imageTitle}" th:title="${newsItem.imageTitle}"/>
+                <a th:unless="${isArticle}" th:href="${newsItem.path}" alt="Artikel text abrufen." title="Artikel text abrufen."><img th:src="${newsItem.imageUrl}" th:alt="${newsItem.imageTitle}" th:title="${newsItem.imageTitle}"/></a>
                 <div class="glasspane"></div>
             </div>
-            <div th:if="${isArticle}" class="caption" th:text="${newsItem.imageCaption}"></div>
+            <div th:if="${isArticle && newsItem.videoUrl == null && newsItem.imageUrl != null}" class="caption" th:text="${newsItem.imageCaption}"></div>
+            <audio th:if="${newsItem.videoUrl == null && newsItem.audioUrl != null}" class="image" th:src="${newsItem.audioUrl}" alt="Audio abspielen" title="Audio abspielen" target="_blank" controls>
+                <p>
+                    Ihr browser unterstützt keinen Audioplayer.
+                    Das Audio befindet sich <a th:if="${newsItem.audioUrl != null}" class="audio" th:href="${newsItem.audioUrl}" alt="Audio abspielen" title="Audio abspielen" target="_blank">hier</a>
+                </p>
+            </audio>
         </div>
     </body>
 </html>

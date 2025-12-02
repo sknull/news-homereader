@@ -1,5 +1,6 @@
 package de.visualdigits.newshomereader.service
 
+import de.visualdigits.newshomereader.HtmlUtil.getRequestUri
 import de.visualdigits.newshomereader.model.cache.images.ImageProxy
 import de.visualdigits.newshomereader.model.cache.newsitem.NewsItemCache
 import de.visualdigits.newshomereader.model.configuration.NewsHomeReader
@@ -11,9 +12,7 @@ import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.stereotype.Service
 import org.springframework.ui.Model
-import java.io.UnsupportedEncodingException
 import java.net.URI
-import java.net.URLDecoder
 import java.time.format.DateTimeFormatter.ofPattern
 
 @Service
@@ -27,39 +26,45 @@ class PageService(
         hashCode: UInt? = null,
         hideRead: Boolean = false,
         readItems: MutableSet<UInt> = mutableSetOf(),
-        model: Model,
-        request: HttpServletRequest,
-        response: HttpServletResponse
+        requestUri: String,
+        response: HttpServletResponse,
+        model: Model
     ): String {
-        val currentPage = determineCurrentPage(request, "/news")
-        renderPageModel(currentPage, model, hideRead, readItems, hashCode, response)
+        val currentPage = newsHomeReader.newsFeedsConfiguration?.naviMain?.getPage(requestUri)
+        renderPageModel(currentPage, hideRead, readItems, hashCode, response, model)
 
         return "page"
     }
 
     fun formHideRead(
         readItems: MutableSet<UInt> = mutableSetOf(),
-        model: Model,
         request: HttpServletRequest,
-        response: HttpServletResponse
+        response: HttpServletResponse,
+        model: Model
     ): String {
-        val currentPage = determineCurrentPage(request, "/formHideRead")
+        val currentPage = newsHomeReader.newsFeedsConfiguration?.naviMain?.getPage(
+            request
+                .getRequestUri()
+                .replace("/formHideRead", "").let { ru -> if (ru.startsWith("/")) ru.drop(1) else ru })
         val hideRead = request.parameterMap["hideRead"] == null
 
         addPersistentCookie("hideRead", hideRead.toString(), response)
 
-        renderPageModel(currentPage, model, hideRead, readItems, response = response)
+        renderPageModel(currentPage, hideRead, readItems, response = response, model = model)
 
         return "page"
     }
 
     fun formMarkAllRead(
         readItems: MutableSet<UInt> = mutableSetOf(),
-        model: Model,
         request: HttpServletRequest,
-        response: HttpServletResponse
+        response: HttpServletResponse,
+        model: Model
     ): String {
-        val currentPage = determineCurrentPage(request, "/formMarkAllRead")
+        val currentPage = newsHomeReader.newsFeedsConfiguration?.naviMain?.getPage(
+            request
+                .getRequestUri()
+                .replace("/formMarkAllRead", "").let { ru -> if (ru.startsWith("/")) ru.drop(1) else ru })
         val hideRead = request.parameterMap["hideRead"]?.firstOrNull() == "true"
         val markAllRead = request.parameterMap["markAllRead"] != null
         val markAllUnread = request.parameterMap["markAllUnread"] != null
@@ -72,18 +77,18 @@ class PageService(
             }
             addPersistentCookie("readItems", readItems.joinToString("/"), response)
         }
-        renderPageModel(currentPage, model, hideRead, readItems, response = response)
+        renderPageModel(currentPage, hideRead, readItems, response = response, model = model)
 
         return "page"
     }
 
     private fun renderPageModel(
         currentPage: Page?,
-        model: Model,
         hideRead: Boolean = false,
         readItems: MutableSet<UInt> = mutableSetOf(),
         hashCode: UInt? = null,
-        response: HttpServletResponse
+        response: HttpServletResponse,
+        model: Model
     ) {
         if (currentPage != null) {
             val path = currentPage.path()
@@ -104,11 +109,11 @@ class PageService(
                 newsItemCache
                     .getNewsItem(hashCode)
                     ?.also { item ->
-                        renderArticleModel(item, model, hideRead, readItems)
+                        renderArticleModel(item, hideRead, readItems, model)
                     }
             } else {
                 feed?.also { feed ->
-                    renderFeedModel(model, path, hideRead, isMultiFeed, feed, readItems)
+                    renderFeedModel(path, hideRead, readItems, isMultiFeed, feed, model)
                 }
             }
 
@@ -116,7 +121,12 @@ class PageService(
         }
     }
 
-    private fun renderArticleModel(item: NewsItem, model: Model, hideRead: Boolean, readItems: MutableSet<UInt>) {
+    private fun renderArticleModel(
+        item: NewsItem,
+        hideRead: Boolean,
+        readItems: MutableSet<UInt>,
+        model: Model
+    ) {
         model.addAttribute("itemLink", item.link)
         model.addAttribute("itemTitle", item.title)
         model.addAttribute("feedtitleDate", item.updated?.format(ofPattern("dd.MM.YYYY HH:mm")))
@@ -130,7 +140,14 @@ class PageService(
         )
     }
 
-    private fun renderFeedModel(model: Model, path: String, hideRead: Boolean, isMultiFeed: Boolean, feed: NewsFeed, readItems: Set<UInt>) {
+    private fun renderFeedModel(
+        path: String,
+        hideRead: Boolean,
+        readItems: Set<UInt>,
+        isMultiFeed: Boolean,
+        feed: NewsFeed,
+        model: Model
+    ) {
         model.addAttribute("isFeedTitleLink", !isMultiFeed)
         model.addAttribute("feedLink", feed.link)
         model.addAttribute("feedTitle", feed.title)
@@ -166,23 +183,6 @@ class PageService(
             items = feeds.flatMap { feed -> feed.items }
         )
         Pair(f, true)
-    }
-
-    private fun determineCurrentPage(request: HttpServletRequest, rootPage: String): Page? {
-        val requestUri = getRequestUri(request).replace(rootPage, "").let { ru -> if (ru.startsWith("/")) ru.drop(1) else ru }
-        val currentPage = newsHomeReader.newsFeedsConfiguration?.naviMain?.getPage(requestUri)
-
-        return currentPage
-    }
-
-    private fun getRequestUri(request: HttpServletRequest): String {
-        var uri = ""
-        try {
-            uri = URLDecoder.decode(request.requestURI, request.characterEncoding)
-        } catch (_: UnsupportedEncodingException) {
-            // ignore
-        }
-        return uri
     }
 
     private fun addPersistentCookie(name: String, value: String, response: HttpServletResponse) {

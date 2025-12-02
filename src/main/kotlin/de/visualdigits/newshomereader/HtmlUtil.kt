@@ -1,8 +1,11 @@
 package de.visualdigits.newshomereader
 
+import jakarta.servlet.http.HttpServletRequest
 import org.jsoup.Jsoup
 import java.io.File
+import java.io.UnsupportedEncodingException
 import java.net.URI
+import java.net.URLDecoder
 
 object HtmlUtil {
 
@@ -20,5 +23,15 @@ object HtmlUtil {
         }
 
         return Triple(url, title, caption)
+    }
+
+    fun HttpServletRequest.getRequestUri(): String {
+        var uri = ""
+        try {
+            uri = URLDecoder.decode(this.requestURI, this.characterEncoding)
+        } catch (_: UnsupportedEncodingException) {
+            // ignore
+        }
+        return uri
     }
 }

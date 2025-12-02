@@ -36,7 +36,7 @@ class ImageProxy(
     @PostConstruct
     fun initialize() {
         imageDirectory
-            .listFiles { file -> file.isFile && file.extension == "json"}
+            .listFiles { file -> file.isFile && file.extension == "json" }
             ?.forEach { file ->
                 val imageInfo = mapper.readValue(File(imageDirectory, "${file.nameWithoutExtension}.json").readText(), ImageInfo::class.java)
                 if (imageInfo.available) {
@@ -56,6 +56,15 @@ class ImageProxy(
         return imageInfo?.let { ii -> imageCache[ii]?.relativeTo(rootDirectory.toPath())?.toString()?.let { path -> "/$path" } }
     }
 
+    fun clearCache() {
+        imageCache.keys.toList()
+            .forEach { imageInfo ->
+                if (!File(rootDirectory, "${imageInfo.newItemHashCode}.${imageInfo.extension}").delete()) log.warn("Could not delete cached image file for id '${imageInfo.hashCode()}'")
+                if (!File(rootDirectory, "${imageInfo.newItemHashCode}.json").delete()) log.warn("Could not delete cached json file for id '${imageInfo.hashCode()}'")
+                imageCache.remove(imageInfo)
+            }
+    }
+
     fun cleanCache() {
         if (imageCache.size > newsHomeReader.maxImagesInCache) {
             imageCache.keys
@@ -69,7 +78,7 @@ class ImageProxy(
         }
     }
 
-    private fun downloadImage(newItemHashCode: UInt, uri: String): ImageInfo? {
+    fun downloadImage(newItemHashCode: UInt, uri: String): ImageInfo? {
         val url = URI(uri.replace(" ", "+")).toURL()
         val file = File(url.path.replace("+", " "))
         val baseName = newItemHashCode.toString()
