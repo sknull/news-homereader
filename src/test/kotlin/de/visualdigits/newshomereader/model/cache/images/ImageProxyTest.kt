@@ -24,7 +24,7 @@ class ImageProxyTest @Autowired constructor(
     @Test
     fun testCache() {
         val url = "https://images.ndr.de/image/eb126784-d97c-454a-adb1-cc4f84b18aa0/AAABkobKAFU/AAABmt42H9g/16x9-big/screenshot1830044.jpg?width=1920"
-        val image = imageProxy.getImage(4711U, url)
+        val image = imageProxy.getImage(4711U, false, url)
         println(image)
     }
 }

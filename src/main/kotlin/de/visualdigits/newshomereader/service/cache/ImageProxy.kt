@@ -47,10 +47,10 @@ class ImageProxy(
             }
     }
 
-    fun getImage(newItemHashCode: UInt, uri: String): String? {
-        var imageInfo: ImageInfo? = ImageInfo(newItemHashCode, uri, OffsetDateTime.now(), "", null, false)
+    fun getImage(newItemHashCode: UInt, isThumbnail: Boolean, uri: String): String? {
+        var imageInfo: ImageInfo? = ImageInfo(newItemHashCode, isThumbnail, uri, OffsetDateTime.now(), "", null, false)
         if (!imageCache.contains(imageInfo)) {
-            imageInfo = downloadImage(newItemHashCode, uri)
+            imageInfo = downloadImage(newItemHashCode, isThumbnail, uri)
         }
 
         return imageInfo?.let { ii -> imageCache[ii]?.relativeTo(NewsHomeReader.Companion.rootDirectory.toPath())?.toString()?.let { path -> "/$path" } }
@@ -84,10 +84,10 @@ class ImageProxy(
         }
     }
 
-    fun downloadImage(newItemHashCode: UInt, uri: String): ImageInfo? {
+    fun downloadImage(newItemHashCode: UInt, isThumbnail: Boolean, uri: String): ImageInfo? {
         val url = URI(uri.replace(" ", "+")).toURL()
         val file = File(url.path.replace("+", " "))
-        val baseName = newItemHashCode.toString()
+        val baseName = "${newItemHashCode}${if (isThumbnail) "_thumbnail" else ""}"
         var attempt = 0
         var imageInfo: ImageInfo? = null
         loop@ while (attempt++ < newsHomeReader.maxDownloadRetries) {
@@ -97,6 +97,7 @@ class ImageProxy(
                     url.openStream().use { ins -> imageFile.outputStream().use { outs -> ins.transferTo(outs) } }
                     imageInfo = ImageInfo(
                         newItemHashCode,
+                        isThumbnail,
                         uri,
                         OffsetDateTime.now(),
                         imageFile.canonicalPath,
@@ -114,7 +115,7 @@ class ImageProxy(
         }
         if (attempt > newsHomeReader.maxDownloadRetries) {
             log.error("Downloading image '$uri' finally failed - marking as unavailable")
-            imageInfo = ImageInfo(newItemHashCode, uri, OffsetDateTime.now(), null, null, false)
+            imageInfo = ImageInfo(newItemHashCode, isThumbnail, uri, OffsetDateTime.now(), null, null, false)
             imageCache[imageInfo] = null // set key to null to avoid future retry attempts
             File(imageDirectory, "$baseName.json").writeText(mapper.writeValueAsString(imageInfo))
         }

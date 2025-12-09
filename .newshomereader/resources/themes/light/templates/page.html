@@ -67,7 +67,7 @@
                     </div>
                 </div>
                 <div th:replace="~{fragments :: newsItemImage (newsItem=${newsItem})}"></div>
-                <div class="news-summary" th:text="${newsItem.summary}"></div>
+                <div class="news-summary" th:utext="${newsItem.summary}"></div>
                 <div class="news-html" th:utext="${newsItem.html}"></div>
                 <a th:if="${newsItem.discussionUrl != null}" class="button" th:href="${newsItem.discussionUrl}" target="_blank" th:text="'Diskussion [' + ${newsItem.commentCount} + ']'"></a>
             </div>

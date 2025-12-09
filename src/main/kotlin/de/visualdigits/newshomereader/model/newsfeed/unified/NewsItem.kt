@@ -79,6 +79,10 @@ class NewsItem(
         val readClazz = if (read) " read" else ""
         val hideClazz = if (read && clientData.hideRead) " hide" else ""
 
+        val imageUrl = (if (isArticle) articleImage ?: image else image)
+            ?.let { img ->
+                imageProxy.getImage(newsItemHashCode, !isArticle, img)
+            }
         return NewsItemRendered(
             itemClass = "news-$itemClazz$readClazz$hideClazz",
             feedName = feedName,
@@ -88,7 +92,7 @@ class NewsItem(
             isFree = isFree,
             imageTitle = imageTitle,
             imageCaption = imageCaption,
-            imageUrl = (if (isArticle) articleImage?:image else image)?.let { img -> imageProxy.getImage(newsItemHashCode, img) },
+            imageUrl = imageUrl,
             audioUrl = audioItems.firstOrNull()?.url,
             videoUrl = videoItems.firstOrNull()?.url,
             discussionUrl = discussionUrl,

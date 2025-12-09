@@ -4,6 +4,7 @@ import java.time.OffsetDateTime
 
 class ImageInfo(
     val newItemHashCode: UInt,
+    val isThumbnail: Boolean,
     val uri: String,
     val downloaded: OffsetDateTime,
     val path: String?,

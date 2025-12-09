@@ -8,6 +8,43 @@
                 <div class="title"><a class="title" th:href="${newsItem.path}" alt="Artikel text abrufen." title="Artikel text abrufen." th:text="${newsItem.title}"></a></div>
             </div>
             <div th:replace="~{fragments :: newsItemImage (newsItem=${newsItem})}"></div>
+            <div class="news-summary" th:utext="${newsItem.summary}"></div>
+        </th:block>
+
+        <!--
+        News item image (if any)
+        -->
+        <div th:fragment="newsItemImage (newsItem)" class="news-image">
+            <video th:if="${newsItem.videoUrl != null}" class="image" th:src="${newsItem.videoUrl}" alt="Video abspielen" title="Video abspielen" target="_blank" controls>
+                <p>
+                    Ihr browser unterstützt keinen Videoplayer.
+                    Das Video befindet sich <a th:if="${newsItem.audioUrl != null}" class="video" th:href="${newsItem.videoUrl}" alt="Video abspielen" title="Video abspielen" target="_blank">hier</a>
+                </p>
+            </video>
+            <div th:if="${newsItem.videoUrl == null && newsItem.imageUrl != null}" class="image">
+                <img th:if="${isArticle}" th:src="${newsItem.imageUrl}" th:alt="${newsItem.imageTitle}" th:title="${newsItem.imageTitle}"/>
+                <a th:unless="${isArticle}" th:href="${newsItem.path}" alt="Artikel text abrufen." title="Artikel text abrufen."><img th:src="${newsItem.imageUrl}" th:alt="${newsItem.imageTitle}" th:title="${newsItem.imageTitle}"/></a>
+                <div class="glasspane"></div>
+            </div>
+            <div th:if="${isArticle && newsItem.videoUrl == null && newsItem.imageUrl != null}" class="caption" th:text="${newsItem.imageCaption}"></div>
+            <audio th:if="${newsItem.videoUrl == null && newsItem.audioUrl != null}" class="image" th:src="${newsItem.audioUrl}" alt="Audio abspielen" title="Audio abspielen" target="_blank" controls>
+                <p>
+                    Ihr browser unterstützt keinen Audioplayer.
+                    Das Audio befindet sich <a th:if="${newsItem.audioUrl != null}" class="audio" th:href="${newsItem.audioUrl}" alt="Audio abspielen" title="Audio abspielen" target="_blank">hier</a>
+                </p>
+            </audio>
+        </div>
+    </body>
+</html><html xmlns:th="http://www.thymeleaf.org" th:lang="${language}">
+    <body>
+
+        <th:block th:fragment="newsFeedItem (newsItem)">
+            <div class="news-title">
+                <div th:if="${isMultiFeed}" class="feedName" th:text="${newsItem.feedName}"></div>
+                <div class="date" th:text="${newsItem.updated}"></div>
+                <div class="title"><a class="title" th:href="${newsItem.path}" alt="Artikel text abrufen." title="Artikel text abrufen." th:text="${newsItem.title}"></a></div>
+            </div>
+            <div th:replace="~{fragments :: newsItemImage (newsItem=${newsItem})}"></div>
             <div class="news-summary" th:text="${newsItem.summary}"></div>
         </th:block>
 
