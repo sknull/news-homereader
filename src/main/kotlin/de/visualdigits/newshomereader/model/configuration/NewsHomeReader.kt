@@ -30,10 +30,5 @@ class NewsHomeReader(
         val rootDirectory: File = File(System.getProperty("user.home"), ".newshomereader")
     }
 
-    var newsFeedsConfiguration: NewsFeedsConfiguration? = null
-
-    @PostConstruct
-    fun initialize() {
-        newsFeedsConfiguration = mapper.readValue(Paths.get(rootDirectory.canonicalPath, "resources", "newsfeeds.json").toFile(), NewsFeedsConfiguration::class.java)
-    }
+    fun newsFeedsConfiguration(): NewsFeedsConfiguration? = mapper.readValue(Paths.get(rootDirectory.canonicalPath, "resources", "newsfeeds.json").toFile(), NewsFeedsConfiguration::class.java)
 }

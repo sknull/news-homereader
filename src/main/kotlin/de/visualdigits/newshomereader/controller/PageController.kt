@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.CookieValue
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestParam
+import java.util.UUID
 
 
 @Controller("PageController")
@@ -22,8 +23,7 @@ class PageController(
     @GetMapping(value = ["/**"], produces = ["application/xhtml+xml"])
     fun dispatch(
         @RequestParam(name = "hashCode", required = false) hashCode: String? = null,
-        @CookieValue(name = "hideRead", required = false) hideRead: Boolean = false,
-        @CookieValue(name = "readItems", required = false) readItems: String = "",
+        @CookieValue(name = "clientCode", required = false) clientCode: UUID? = null,
         request: HttpServletRequest,
         response: HttpServletResponse,
         model: Model,
@@ -35,8 +35,7 @@ class PageController(
         } else if (requestUri.startsWith("/news/")) {
             pageService.renderPage(
                 hashCode = hashCode?.toUInt(),
-                hideRead = hideRead,
-                readItems = readItems.toMutableSet(),
+                clientCode = clientCode,
                 requestUri = request.getRequestUri().removePrefix("/news/"),
                 response = response,
                 model = model
@@ -44,8 +43,7 @@ class PageController(
         } else {
             pageService.renderPage(
                 hashCode = hashCode?.toUInt(),
-                hideRead = hideRead,
-                readItems = readItems.toMutableSet(),
+                clientCode = clientCode,
                 requestUri = request.getRequestUri(),
                 response = response,
                 model = model
@@ -55,35 +53,29 @@ class PageController(
 
     @PostMapping(value = ["/formHideRead/**"], produces = ["application/xhtml+xml"])
     fun formHideRead(
-        @CookieValue(name = "readItems", required = false) readItems: String = "",
+        @CookieValue(name = "clientCode", required = true) clientCode: UUID,
         request: HttpServletRequest,
-        response: HttpServletResponse,
         model: Model
     ): String {
         return pageService.formHideRead(
-            readItems = readItems.toMutableSet(),
+            clientCode = clientCode,
+            requestUri = request.getRequestUri().removePrefix("/formHideRead/"),
             request = request,
-            response = response,
             model = model
         )
     }
 
     @PostMapping(value = ["/formMarkAllRead/**"], produces = ["application/xhtml+xml"])
     fun formMarkAllRead(
-        @CookieValue(name = "readItems", required = false) readItems: String = "",
+        @CookieValue(name = "clientCode", required = true) clientCode: UUID,
         request: HttpServletRequest,
-        response: HttpServletResponse,
         model: Model
     ): String {
         return pageService.formMarkAllRead(
-            readItems = readItems.toMutableSet(),
+            clientCode = clientCode,
+            requestUri = request.getRequestUri().removePrefix("/formMarkAllRead/"),
             request = request,
-            response = response,
             model = model
         )
     }
-}
-
-private fun String.toMutableSet(): MutableSet<UInt> {
-    return this.split("/").mapNotNull { it.trim().let { n -> if (n.isNotEmpty()) n.toUInt() else null } }.toMutableSet()
 }

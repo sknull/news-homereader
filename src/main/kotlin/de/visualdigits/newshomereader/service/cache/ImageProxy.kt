@@ -1,11 +1,11 @@
-package de.visualdigits.newshomereader.model.cache.images
+package de.visualdigits.newshomereader.service.cache
 
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.databind.json.JsonMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonMapperBuilder
+import de.visualdigits.newshomereader.model.cache.ImageInfo
 import de.visualdigits.newshomereader.model.configuration.NewsHomeReader
-import de.visualdigits.newshomereader.model.configuration.NewsHomeReader.Companion.rootDirectory
 import jakarta.annotation.PostConstruct
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -31,7 +31,7 @@ class ImageProxy(
 
     private val imageCache: MutableMap<ImageInfo, Path?> = mutableMapOf()
 
-    private val imageDirectory = Paths.get(rootDirectory.canonicalPath, "resources", "cache", "images").toFile()
+    private val imageDirectory = Paths.get(NewsHomeReader.Companion.rootDirectory.canonicalPath, "resources", "cache", "images").toFile()
 
     @PostConstruct
     fun initialize() {
@@ -53,14 +53,17 @@ class ImageProxy(
             imageInfo = downloadImage(newItemHashCode, uri)
         }
 
-        return imageInfo?.let { ii -> imageCache[ii]?.relativeTo(rootDirectory.toPath())?.toString()?.let { path -> "/$path" } }
+        return imageInfo?.let { ii -> imageCache[ii]?.relativeTo(NewsHomeReader.Companion.rootDirectory.toPath())?.toString()?.let { path -> "/$path" } }
     }
 
     fun clearCache() {
         imageCache.keys.toList()
             .forEach { imageInfo ->
-                if (!File(rootDirectory, "${imageInfo.newItemHashCode}.${imageInfo.extension}").delete()) log.warn("Could not delete cached image file for id '${imageInfo.hashCode()}'")
-                if (!File(rootDirectory, "${imageInfo.newItemHashCode}.json").delete()) log.warn("Could not delete cached json file for id '${imageInfo.hashCode()}'")
+                if (!File(
+                        NewsHomeReader.Companion.rootDirectory,
+                        "${imageInfo.newItemHashCode}.${imageInfo.extension}"
+                    ).delete()) log.warn("Could not delete cached image file for id '${imageInfo.hashCode()}'")
+                if (!File(NewsHomeReader.Companion.rootDirectory, "${imageInfo.newItemHashCode}.json").delete()) log.warn("Could not delete cached json file for id '${imageInfo.hashCode()}'")
                 imageCache.remove(imageInfo)
             }
     }
@@ -71,8 +74,11 @@ class ImageProxy(
                 .sortedBy { imageInfo -> imageInfo.downloaded.toInstant().toEpochMilli() }
                 .dropLast(newsHomeReader.maxImagesInCache)
                 .forEach { imageInfo ->
-                    if (!File(rootDirectory, "${imageInfo.newItemHashCode}.${imageInfo.extension}").delete()) log.warn("Could not delete cached image file for id '${imageInfo.hashCode()}'")
-                    if (!File(rootDirectory, "${imageInfo.newItemHashCode}.json").delete()) log.warn("Could not delete cached json file for id '${imageInfo.hashCode()}'")
+                    if (!File(
+                            NewsHomeReader.Companion.rootDirectory,
+                            "${imageInfo.newItemHashCode}.${imageInfo.extension}"
+                        ).delete()) log.warn("Could not delete cached image file for id '${imageInfo.hashCode()}'")
+                    if (!File(NewsHomeReader.Companion.rootDirectory, "${imageInfo.newItemHashCode}.json").delete()) log.warn("Could not delete cached json file for id '${imageInfo.hashCode()}'")
                     imageCache.remove(imageInfo)
                 }
         }
@@ -89,7 +95,14 @@ class ImageProxy(
             if (!imageFile.exists()) {
                 try {
                     url.openStream().use { ins -> imageFile.outputStream().use { outs -> ins.transferTo(outs) } }
-                    imageInfo = ImageInfo(newItemHashCode, uri, OffsetDateTime.now(), imageFile.canonicalPath, file.extension, true)
+                    imageInfo = ImageInfo(
+                        newItemHashCode,
+                        uri,
+                        OffsetDateTime.now(),
+                        imageFile.canonicalPath,
+                        file.extension,
+                        true
+                    )
                     File(imageDirectory, "$baseName.json").writeText(mapper.writeValueAsString(imageInfo))
                     imageCache[imageInfo] = imageFile.toPath()
                     break@loop

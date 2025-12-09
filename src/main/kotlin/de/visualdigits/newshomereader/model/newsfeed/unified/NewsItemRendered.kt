@@ -14,6 +14,9 @@ class NewsItemRendered(
     val audioUrl: String?,
     val videoUrl: String?,
 
+    val discussionUrl: String?,
+    val commentCount: Int?,
+
     val summary: String?,
     val html: String?
 )

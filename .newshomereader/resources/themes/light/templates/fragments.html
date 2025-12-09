@@ -49,7 +49,7 @@
         </div>
 
         <!--
-        Reusable new item
+        Reusable news item
         -->
         <th:block th:fragment="newsFeedItem (newsItem)">
             <div class="news-title">
@@ -60,6 +60,7 @@
             <div th:replace="~{fragments :: newsItemImage (newsItem=${newsItem})}"></div>
             <div class="news-summary" th:text="${newsItem.summary}"></div>
             <div th:if="${isArticle}" class="news-html" th:utext="${newsItem.html}"></div>
+            <a th:if="${newsItem.discussionUrl != null}" class="button" th:href="${newsItem.discussionUrl}" target="_blank" th:text="'Diskussion [' + ${newsItem.commentCount} + ']'"></a>
         </th:block>
 
         <!--

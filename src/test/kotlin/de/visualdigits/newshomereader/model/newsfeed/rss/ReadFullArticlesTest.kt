@@ -1,6 +1,6 @@
 package de.visualdigits.newshomereader.model.newsfeed.rss
 
-import de.visualdigits.newshomereader.model.cache.newsitem.NewsItemCache
+import de.visualdigits.newshomereader.service.cache.NewsItemCache
 import de.visualdigits.newshomereader.model.newsfeed.unified.NewsFeed
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired

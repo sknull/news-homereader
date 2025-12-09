@@ -1,5 +1,6 @@
 package de.visualdigits.newshomereader.model.cache.images
 
+import de.visualdigits.newshomereader.service.cache.ImageProxy
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired

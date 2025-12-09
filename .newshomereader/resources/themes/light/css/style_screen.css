@@ -101,7 +101,7 @@ h1, h2, h3, h4 {
 }
 
 #main {
-	height: 100%;
+	height: 100vh;
 	padding: 0px;
 	margin: 0px;
 	overflow: hidden;
@@ -155,6 +155,20 @@ h1, h2, h3, h4 {
 	cursor: pointer;
 }
 
+a.button {
+    margin: 0px;
+    padding: 2px 0px 0px 0px;
+	width: 150px;
+	height: 25px;
+	display: block;
+	background-color: #2774ac;
+	color: #ffffff;
+	border: 0px solid transparent;
+	border-radius: 5px;
+	cursor: pointer;
+	text-align: center;
+}
+
 #buttons .container {
 	float: right;
 }
@@ -166,6 +180,8 @@ h1, h2, h3, h4 {
 
 #content {
 	grid-area: content;
+    width: 100%;
+    height: 100%;
 	margin: 0px 10px 10px 10px;
 	overflow-x: hidden;
 	overflow-y: auto;
@@ -178,9 +194,9 @@ h1, h2, h3, h4 {
 	color: #001040;
 	background-color: #97cfff;
 	text-decoration: none;
-	height: 24px;
+	height: 30px;
 	padding: 3px 0px 0px 15px;
-	font-size: 12pt;
+	font-size: 18pt;
 	white-space: nowrap;
 	display: block;
 	overflow: hidden;
@@ -244,9 +260,9 @@ h1, h2, h3, h4 {
 	white-space: nowrap;
 	outline: none;
 
-	height: 22px;
+	height: 30px;
 	padding: 4px 0px 0px 15px;
-	font-size: 9pt;
+	font-size: 12pt;
 }
 
 #main-navigation a div {
@@ -473,9 +489,11 @@ a.title:hover {
 }
 
 .news-article {
+    display: block;
+    overflow: hidden;
 	width: 100%;
+    margin: 0px 0px 10px 0px;
 	padding: 10px;
-	margin: 0px;
 	background-color: rgba(0, 0, 0, 0.5);
 }
 

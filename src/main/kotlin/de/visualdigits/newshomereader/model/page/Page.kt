@@ -71,7 +71,7 @@ class Page(
         indent: String = ""
     ): String {
         val html = StringBuilder()
-        html.append("$indent<a href=\"/news/${StringEscapeUtils.escapeHtml4(page.path())}?hideRead=$hideRead&\" style=\"padding-left: ${10 + level * 10}px;\">")
+        html.append("$indent<a href=\"/news/${StringEscapeUtils.escapeHtml4(page.path())}\" style=\"padding-left: ${10 + level * 10}px;\">")
             .append("<div class=\"nav-item\">")
         html.append("<div class=\"nav-text\">${page.name}</div>")
             .append("</div>")

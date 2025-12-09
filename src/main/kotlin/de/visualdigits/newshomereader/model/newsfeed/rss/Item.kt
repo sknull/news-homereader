@@ -4,7 +4,7 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty
 import de.visualdigits.hybridxml.model.BaseNode
 import de.visualdigits.newshomereader.HtmlUtil.extractImage
-import de.visualdigits.newshomereader.model.cache.newsitem.NewsItemCache
+import de.visualdigits.newshomereader.service.cache.NewsItemCache
 import de.visualdigits.newshomereader.model.newsfeed.atom.Text
 import de.visualdigits.newshomereader.model.newsfeed.unified.NewsItem
 import org.apache.commons.text.StringEscapeUtils

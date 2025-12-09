@@ -1,5 +1,6 @@
-package de.visualdigits.newshomereader.model.cache.newsitem
+package de.visualdigits.newshomereader.service.cache
 
+import de.visualdigits.newshomereader.model.cache.NewsItemCacheKey
 import de.visualdigits.newshomereader.model.configuration.NewsHomeReader
 import de.visualdigits.newshomereader.model.newsfeed.unified.NewsItem
 import org.springframework.stereotype.Service
@@ -27,9 +28,15 @@ class NewsItemCache(
     fun getNewsItemHashCodes(): Set<UInt> = itemCache.keys.map { k -> k.newsItemHashCode }.toSet()
 
     fun cacheNewsItem(newsItem: NewsItem): NewsItem {
-        getNewsItem(newsItem.newsItemHashCode)?.also { oldItem -> itemCache.remove(oldItem.cacheKey()) }
-
         val newKey = newsItem.cacheKey()
+
+        getNewsItem(newsItem.newsItemHashCode)
+            ?.also { oldItem ->
+                val cacheKey = oldItem.cacheKey()
+//                readItemsService.remove(cacheKey.newsItemHashCode)
+                itemCache.remove(cacheKey)
+            }
+
         itemCache.putIfAbsent(newKey, newsItem)
 
         // remove old items exceeding max item number

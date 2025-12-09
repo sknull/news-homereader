@@ -9,8 +9,9 @@ import com.fasterxml.jackson.databind.json.JsonMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonMapperBuilder
 import de.visualdigits.hybridxml.model.BaseNode
-import de.visualdigits.newshomereader.model.cache.images.ImageProxy
-import de.visualdigits.newshomereader.model.cache.newsitem.NewsItemCacheKey
+import de.visualdigits.newshomereader.service.cache.ImageProxy
+import de.visualdigits.newshomereader.model.cache.NewsItemCacheKey
+import de.visualdigits.newshomereader.model.clientdata.ClientData
 import de.visualdigits.newshomereader.model.newsfeed.applicationjson.AppJson
 import de.visualdigits.newshomereader.model.newsfeed.applicationjson.OffsetDateTimeHeuristicDeserializer
 import io.github.cdimascio.essence.Essence
@@ -21,7 +22,7 @@ import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 
 @Component
-@JsonIgnoreProperties("hashCode")
+@JsonIgnoreProperties("hashCode", "rawHtml", "html", "videoItems", "audioItems", "articleImage")
 class NewsItem(
     val feedName: String? = null,
     val identifier: String? = null,
@@ -36,16 +37,20 @@ class NewsItem(
     val keywords: List<String>? = null,
     val image: String? = null,
     val imageTitle: String? = null,
-    val imageCaption: String? = null,
+    var imageCaption: String? = null,
 
-    var rawHtml: String? = null, // as fetched from URL
-    var html: String? = null, // contains only main article markup
     var applicationJson: List<AppJson>? = null,
-    var videoItems: List<MediaItem> = listOf(),
-    var audioItems: List<MediaItem> = listOf(),
 ) : BaseNode<NewsItem>() {
 
     val newsItemHashCode: UInt = "$feedName$identifier".hashCode().toUInt()
+
+    var rawHtml: String? = null // as fetched from URL
+    var html: String? = null // contains only main article markup
+    var videoItems: List<MediaItem> = listOf()
+    var audioItems: List<MediaItem> = listOf()
+    var articleImage: String? = null
+    var discussionUrl: String? = null
+    var commentCount: Int? = null
 
     companion object {
         val jsonMapper: JsonMapper = jacksonMapperBuilder()
@@ -63,28 +68,29 @@ class NewsItem(
     fun toModel(
         imageProxy: ImageProxy,
         isArticle: Boolean,
-        hideRead: Boolean,
-        readItems: Set<UInt> = setOf(),
+        clientData: ClientData,
         path: String? = null
     ): NewsItemRendered {
         if (isArticle) readFullArticle()
 
         val itemClazz = if (isArticle) "article" else "item"
-        val read = readItems.contains(newsItemHashCode)
+        val read = clientData.readItems.contains(newsItemHashCode)
         val readClazz = if (read) " read" else ""
-        val hideClazz = if (read && hideRead) " hide" else ""
+        val hideClazz = if (read && clientData.hideRead) " hide" else ""
 
         return NewsItemRendered(
             itemClass = "news-$itemClazz$readClazz$hideClazz",
             feedName = feedName,
             title = title,
-            path = "/news/$path?hashCode=$newsItemHashCode&hideRead=$hideRead&",
+            path = "/news/$path?hashCode=$newsItemHashCode&",
             updated = updated?.format(DateTimeFormatter.ofPattern("dd.MM.YYYY HH:mm")),
             imageTitle = imageTitle,
             imageCaption = imageCaption,
-            imageUrl = image?.let { img -> imageProxy.getImage(newsItemHashCode, img) },
+            imageUrl = (if (isArticle) articleImage?:image else image)?.let { img -> imageProxy.getImage(newsItemHashCode, img) },
             audioUrl = audioItems.firstOrNull()?.url,
             videoUrl = videoItems.firstOrNull()?.url,
+            discussionUrl = discussionUrl,
+            commentCount = commentCount,
             summary = summary,
             html = html
         )
@@ -95,18 +101,55 @@ class NewsItem(
             // read only once from website to acoid traffic
             link?.let { l -> URI(l).toURL().readText() }?.let { rawHtml ->
                 this.rawHtml = rawHtml
-                // try to avoid repeating the summary (extraction heuristics are not perfect...)
+
+                // extract main text from raw html using essence's heuristics
                 var html = Essence.extract(rawHtml).html
+
+                // if image caption just contains the summary we null it out
+                imageCaption?.let { ic ->
+                    if(html.contains(ic)) {
+                        imageCaption = null
+                    }
+                }
+
+                // try to avoid repeating the summary (extraction heuristics are not perfect...)
                 summary?.let { s ->
                     if(html.contains(s)) {
                         html = html.replace(s, "")
                     }
                 }
+
                 this.html = html
 
                 this.applicationJson = Jsoup.parse(rawHtml)
                     .select("script[type=application/ld+json]")
-                    .map { script -> jsonMapper.readValue(script.data(), AppJson::class.java) }
+                    .map { script ->
+                        val appJson = jsonMapper.readValue(script.data(), AppJson::class.java)
+                        appJson.clazz = script.attr("class")
+                        appJson
+                    }
+
+                val newsArticle = applicationJson
+                    ?.find { script -> script.type == "NewsArticle" }
+                    ?:applicationJson
+                        ?.filter { script -> script.graphs.isNotEmpty() }
+                        ?.map { script -> script.graphs.find { g -> g.type == "NewsArticle" } }
+                        ?.firstOrNull()
+                articleImage = newsArticle
+                    ?.images
+                    ?.maxBy { image -> image.width?:0 }
+                    ?.url
+
+                var discussionUrl = newsArticle?.discussionUrl
+                if (discussionUrl?.startsWith("/") == true) { // make relative url absolute
+                    link?.let { l ->
+                        val uri = URI(l)
+                        discussionUrl = "${uri.scheme}://${uri.host}$discussionUrl"
+                    }
+                }
+                this.discussionUrl = discussionUrl
+                this.commentCount = newsArticle?.commentCount?:0
+
                 audioItems = applicationJson
                     ?.filter { script -> script.type == "AudioObject" }
                     ?.map { ao -> ao.toMediaItem() }

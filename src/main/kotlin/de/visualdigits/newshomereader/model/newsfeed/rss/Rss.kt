@@ -6,7 +6,7 @@ import de.visualdigits.hybridxml.model.BaseNode
 import de.visualdigits.hybridxml.model.html.Html.Companion.createHtmlNode
 import de.visualdigits.hybridxml.model.html.Html.Companion.parseHtml
 import de.visualdigits.hybridxml.model.polymorphic.PolymorphicNode
-import de.visualdigits.newshomereader.model.cache.newsitem.NewsItemCache
+import de.visualdigits.newshomereader.service.cache.NewsItemCache
 import de.visualdigits.newshomereader.model.newsfeed.unified.NewsFeed
 import org.jsoup.nodes.Element
 

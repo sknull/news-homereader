@@ -1,4 +1,4 @@
-package de.visualdigits.newshomereader.model.cache.newsitem
+package de.visualdigits.newshomereader.model.cache
 
 import java.time.OffsetDateTime
 

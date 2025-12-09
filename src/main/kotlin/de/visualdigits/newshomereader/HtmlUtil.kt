@@ -1,6 +1,8 @@
 package de.visualdigits.newshomereader
 
+import jakarta.servlet.http.Cookie
 import jakarta.servlet.http.HttpServletRequest
+import jakarta.servlet.http.HttpServletResponse
 import org.jsoup.Jsoup
 import java.io.File
 import java.io.UnsupportedEncodingException
@@ -33,5 +35,14 @@ object HtmlUtil {
             // ignore
         }
         return uri
+    }
+
+    fun HttpServletResponse.addPersistentCookie(name: String, value: String) {
+        val cookie = Cookie(name, value)
+        cookie.maxAge = Int.MAX_VALUE
+        cookie.secure = false
+        cookie.isHttpOnly = true
+        cookie.path = "/"
+        this.addCookie(cookie)
     }
 }

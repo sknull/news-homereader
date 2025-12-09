@@ -3,7 +3,7 @@ package de.visualdigits.newshomereader.model.newsfeed.atom
 
 import de.visualdigits.hybridxml.model.BaseNode
 import de.visualdigits.newshomereader.HtmlUtil.extractImage
-import de.visualdigits.newshomereader.model.cache.newsitem.NewsItemCache
+import de.visualdigits.newshomereader.service.cache.NewsItemCache
 import de.visualdigits.newshomereader.model.newsfeed.unified.NewsItem
 import java.time.OffsetDateTime
 

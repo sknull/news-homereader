@@ -3,7 +3,7 @@ package de.visualdigits.newshomereader.model.newsfeed.atom
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty
 import de.visualdigits.hybridxml.model.BaseNode
-import de.visualdigits.newshomereader.model.cache.newsitem.NewsItemCache
+import de.visualdigits.newshomereader.service.cache.NewsItemCache
 import de.visualdigits.newshomereader.model.newsfeed.unified.NewsFeed
 import java.time.OffsetDateTime
 

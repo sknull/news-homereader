@@ -22,7 +22,12 @@
             "children": [
               {
                 "name": "NDR",
-                "url": "https://www.ndr.de/nachrichten/hamburg/index~rdf.xml"
+                "url": "https://www.ndr.de/nachrichten/hamburg/index~rdf.xml",
+			    "filters": {
+			    	"title": {
+			    		"stopWords": ["Meistgeklickt:"]
+			    	}
+			    }
               },
               {
                 "name": "WDR",
@@ -40,7 +45,7 @@
             "url": "https://www.heise.de/rss/heise-atom.xml",
 			"filters": {
 				"title": {
-					"stopWords": ["heise+"]
+					"stopWords": ["heise+", "heise-Angebot:"]
 				}
 			}
           },
