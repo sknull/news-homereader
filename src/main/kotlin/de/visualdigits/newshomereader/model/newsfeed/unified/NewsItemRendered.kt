@@ -6,6 +6,7 @@ class NewsItemRendered(
     val title: String?,
     val path: String,
     val updated: String?,
+    val isFree: Boolean,
 
     val imageTitle: String?,
     val imageCaption: String?,
@@ -19,4 +20,5 @@ class NewsItemRendered(
 
     val summary: String?,
     val html: String?
+
 )

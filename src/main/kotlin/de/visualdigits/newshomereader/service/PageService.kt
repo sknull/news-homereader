@@ -1,6 +1,7 @@
 package de.visualdigits.newshomereader.service
 
 import de.visualdigits.newshomereader.HtmlUtil.addPersistentCookie
+import de.visualdigits.newshomereader.HtmlUtil.getRequestUri
 import de.visualdigits.newshomereader.model.configuration.NewsFeedsConfiguration
 import de.visualdigits.newshomereader.model.configuration.NewsHomeReader
 import de.visualdigits.newshomereader.model.newsfeed.unified.NewsFeed
@@ -13,6 +14,7 @@ import jakarta.servlet.http.HttpServletResponse
 import org.springframework.stereotype.Service
 import org.springframework.ui.Model
 import java.net.URI
+import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter.ofPattern
 import java.util.*
 
@@ -48,11 +50,11 @@ class PageService(
 
     fun formHideRead(
         clientCode: UUID,
-        requestUri: String,
         request: HttpServletRequest,
         model: Model
     ): String {
         val newsFeedsConfiguration = newsHomeReader.newsFeedsConfiguration()
+        val requestUri = request.getRequestUri().removePrefix("/formHideRead/")
         val currentPage = newsFeedsConfiguration?.naviMain?.getPage(requestUri)
         val hideRead = request.parameterMap["hideRead"] == null
         clientDataCacheService.setHideRead(clientCode, hideRead)
@@ -63,20 +65,29 @@ class PageService(
 
     fun formMarkAllRead(
         clientCode: UUID,
-        requestUri: String,
         request: HttpServletRequest,
         model: Model
     ): String {
         val newsFeedsConfiguration = newsHomeReader.newsFeedsConfiguration()
+        val requestUri = request.getRequestUri().removePrefix("/formMarkAllRead/")
         val currentPage = newsFeedsConfiguration?.naviMain?.getPage(requestUri)
-        val markAllRead = request.parameterMap["markAllRead"] != null
-        val markAllUnread = request.parameterMap["markAllUnread"] != null
+        val markAllOlder = request.parameterMap["markAllOlder"]?.firstOrNull()?.toLong()
         if (currentPage != null) {
             val (feed, _) = determineFeed(currentPage)
-            if (markAllRead) {
-                clientDataCacheService.addReadItems(clientCode, feed?.items?.map { item -> item.newsItemHashCode })
-            } else if (markAllUnread) {
-                clientDataCacheService.removeReadItems(clientCode, feed?.items?.map { item -> item.newsItemHashCode })
+            if (markAllOlder != null) {
+                val thresholdDateTime = OffsetDateTime.now().minusDays(markAllOlder)
+                clientDataCacheService.addReadItems(clientCode, feed?.items
+                    ?.filter { item -> item.updated?.isBefore(thresholdDateTime) == true }
+                    ?.map { item -> item.newsItemHashCode }
+                )
+            } else {
+                val markAllRead = request.parameterMap["markAllRead"] != null
+                val markAllUnread = request.parameterMap["markAllUnread"] != null
+                if (markAllRead) {
+                    clientDataCacheService.addReadItems(clientCode, feed?.items?.map { item -> item.newsItemHashCode })
+                } else if (markAllUnread) {
+                    clientDataCacheService.removeReadItems(clientCode, feed?.items?.map { item -> item.newsItemHashCode })
+                }
             }
         }
         renderPageModel(newsFeedsConfiguration, currentPage, clientCode = clientCode, model = model)

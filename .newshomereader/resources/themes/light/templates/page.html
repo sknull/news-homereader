@@ -9,13 +9,13 @@
     <meta property="og:site_name" th:content="${title}"/>
     <meta property="og:title" th:content="${title}"/>
     <meta property="og:description" th:content="${metaDescription}"/>
-    <meta property="og:url" th:content="${siteUrl}+'/'"/>
-    <meta property="og:image" th:content="'/resources/themes/'+${theme}+'/images/bg_hamburg.jpg'"/>
-    <link rel="shortcut icon" th:href="'/resources/themes/'+${theme}+'/images/favicon.ico'" type="image/x-icon"/>
+    <meta property="og:url" th:content="${siteUrl} + '/'"/>
+    <meta property="og:image" th:content="'/resources/themes/' + ${theme} + '/images/bg_hamburg.jpg'"/>
+    <link rel="shortcut icon" th:href="'/resources/themes/' + ${theme} + '/images/favicon.ico'" type="image/x-icon"/>
     <title th:text="${title}"></title>
-    <link rel="alternate" type="application/rss+xml" th:title="${title}+' Fotofeed'" th:href="${siteUrl}+'/rss.xml'"/>
+    <link rel="alternate" type="application/rss+xml" th:title="${title} + ' Fotofeed'" th:href="${siteUrl} + '/rss.xml'"/>
     <span th:utext="${head}" th:remove="tag"></span>
-    <link th:href="'/resources/themes/'+${theme}+'/css/style_screen.css'" type="text/css" rel="stylesheet"/>
+    <link th:href="'/resources/themes/' + ${theme} + '/css/style_screen.css'" type="text/css" rel="stylesheet"/>
 </head>
 <body>
 <section id="sidebar">
@@ -28,19 +28,66 @@
 <div id="main">
     <div id="headerform">
         <div id="dummyheader"></div>
-        <div id="buttons" th:insert="~{fragments :: buttons}"></div>
+        <div id="buttons">
+            <div id="feedtitle-buttons" th:fragment="buttons">
+                <form id="formHideRead" th:action="'/formHideRead/' + ${path}" method="POST">
+                    <div class="container">
+                        <span class="label">Gelesene verstecken</span>
+                        <label class="switch">
+                            <input type="checkbox" name="hideRead" value="true" th:checked="${hideRead}">
+                            <span class="toggleSlider" onclick="javascript:formHideRead.submit();"></span>
+                        </label>
+                    </div>
+                </form>
+                <form id="formMarkAllRead" th:action="'/formMarkAllRead/' + ${path}" method="POST">
+                    <button type="submit" name="markAllRead" value="true">Alle gelesen</button>
+                    <button type="submit" name="markAllOlder" value="2">Alle > 2 Tag gelesen</button>
+                    <button type="submit" name="markAllOlder" value="1">Alle > 1 Tag gelesen</button>
+                    <button type="submit" name="markAllUnread" value="true">Alle ungelesen</button>
+                </form>
+            </div>
+        </div>
     </div> <!-- headerforms -->
     <th:block th:if="${isArticle}">
-        <div id="feedtitle" th:replace="~{fragments :: articleTitle}"></div>
+        <div id="feedtitle">
+            <div id="feedtitle-path">
+                <a th:if="${isMultiFeed}" class="title" th:href="'/news/' + ${path}" alt="Zurück zum Feed" title="Zurück zum Feed" th:text="${pathText} + '/' + ${newsItem.feedName}"></a>
+                <a th:unless="${isMultiFeed}" class="title" th:href="'/news/' + ${path}" alt="Zurück zum Feed" title="Zurück zum Feed" th:text="${pathText}"></a>
+                <span class="feedName" th:text="${feedName}"></span>
+            </div>
+            <div id="feedtitle-title"><a class="title" th:href="${itemLink}" alt="Original Artikel aufrufen." title="Original Artikel aufrufen." target="_blank" th:text="${itemTitle}"></a></div>
+            <div id="feedtitle-date" th:text="${feedtitleDate}"></div>
+        </div>
         <div id="content">
-            <div th:insert="~{fragments :: newsFeedItem (newsItem=${newsItem})}" th:class="${newsItem.itemClass}"></div>
+            <div th:fragment="newsArticle (newsItem)" th:class="${newsItem.itemClass}">
+                <div class="news-title">
+                    <div class="icons">
+                        <img th:if="${newsItem.isFree}" th:src="'/resources/themes/' + ${theme} + '/images/icons/lock_open.png'" alt="Artikel frei lesbar" title="Artikel frei lesbar"/>
+                        <img th:unless="${newsItem.isFree}" th:src="'/resources/themes/' + ${theme} + '/images/icons/lock_closed.png'" alt="Artikel hinter paywall" title="Artikel hinter paywall"/>
+                    </div>
+                </div>
+                <div th:replace="~{fragments :: newsItemImage (newsItem=${newsItem})}"></div>
+                <div class="news-summary" th:text="${newsItem.summary}"></div>
+                <div class="news-html" th:utext="${newsItem.html}"></div>
+                <a th:if="${newsItem.discussionUrl != null}" class="button" th:href="${newsItem.discussionUrl}" target="_blank" th:text="'Diskussion [' + ${newsItem.commentCount} + ']'"></a>
+            </div>
         </div> <!-- content -->
     </th:block>
     <th:block th:unless="${isArticle}">
-        <div id="feedtitle" th:replace="~{fragments :: feedTitle}"></div>
+        <div id="feedtitle" th:fragment="feedTitle">
+            <div id="feedtitle-path">
+                <th:block th:if="${isFeedTitleLink}">
+                    <a th:fragment="feedTitleLink" class="title" th:href="${feedLink}" alt="Webseite besuchen" title="Webseite besuchen" target="_blank" th:text="${feedTitle}"></a>
+                </th:block>
+                <th:block th:unless="${isFeedTitleLink}">
+                    <span th:fragment="feedTitlePath" th:text="${pathText}"></span>
+                </th:block>
+            </div>
+            <div id="feedtitle-title" th:utext="${feedtitleTitle}"></div>
+            <div id="feedtitle-date" th:text="${feedtitleDate}"></div>
+        </div>
         <div id="content">
-            <div th:each="newsItem : ${newsItems}" th:insert="~{fragments :: newsFeedItem (newsItem=${newsItem})}"
-                 th:class="${newsItem.itemClass}"></div>
+            <div th:each="newsItem : ${newsItems}" th:insert="~{fragments :: newsFeedItem (newsItem=${newsItem})}" th:class="${newsItem.itemClass}"></div>
         </div> <!-- content -->
     </th:block>
 </div> <!-- canvas -->

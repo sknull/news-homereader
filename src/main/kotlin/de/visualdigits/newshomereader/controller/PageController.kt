@@ -59,7 +59,6 @@ class PageController(
     ): String {
         return pageService.formHideRead(
             clientCode = clientCode,
-            requestUri = request.getRequestUri().removePrefix("/formHideRead/"),
             request = request,
             model = model
         )
@@ -73,7 +72,6 @@ class PageController(
     ): String {
         return pageService.formMarkAllRead(
             clientCode = clientCode,
-            requestUri = request.getRequestUri().removePrefix("/formMarkAllRead/"),
             request = request,
             model = model
         )

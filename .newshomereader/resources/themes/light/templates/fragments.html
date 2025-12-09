@@ -1,56 +1,6 @@
 <html xmlns:th="http://www.thymeleaf.org" th:lang="${language}">
     <body>
 
-        <!--
-        Form buttons for
-        - hide all read items switch
-        - mark all read button
-        - mark all unread button
-        -->
-        <div id="feedtitle-buttons" th:fragment="buttons">
-            <form id="formHideRead" th:action="'/formHideRead/' + ${path}" method="POST">
-                <div class="container">
-                    <span class="label">Gelesene verstecken</span>
-                    <label class="switch">
-                        <input type="checkbox" name="hideRead" value="true" th:checked="${hideRead}">
-                        <span class="toggleSlider" onclick="javascript:formHideRead.submit();"></span>
-                    </label>
-                </div>
-            </form>
-            <form id="formMarkAllRead" th:action="'/formMarkAllRead/' + ${path}" method="POST">
-                <button type="submit" id="markAllRead" name="markAllRead" value="true">Alle gelesen</button>
-                <button type="submit" id="markAllUnread" name="markAllUnread" value="true">Alle ungelesen</button>
-            </form>
-        </div>
-
-        <!--
-        Page header when a single or multi feed is shown.
-        -->
-        <div id="feedtitle" th:fragment="feedTitle">
-            <div id="feedtitle-path">
-                <th:block th:if="${isFeedTitleLink}">
-                    <a th:fragment="feedTitleLink" class="title" th:href="${feedLink}" alt="Webseite besuchen" title="Webseite besuchen" target="_blank" th:text="${feedTitle}"></a>
-                </th:block>
-                <th:block th:unless="${isFeedTitleLink}">
-                    <span th:fragment="feedTitlePath" th:text="${pathText}"></span>
-                </th:block>
-            </div>
-            <div id="feedtitle-title" th:utext="${feedtitleTitle}"></div>
-            <div id="feedtitle-date" th:text="${feedtitleDate}"></div>
-        </div>
-
-        <!--
-        Page header when a single article is shown.
-        -->
-        <div id="feedtitle" th:fragment="articleTitle">
-            <div id="feedtitle-path"><a class="title" th:href="'/news/' + ${path}" alt="Zurück zum Feed" title="Zurück zum Feed" th:text="${pathText}"></a><span class="feedName" th:text="${feedName}"></span></div>
-            <div id="feedtitle-title"><a class="title" th:href="${itemLink}" alt="Original Artikel aufrufen." title="Original Artikel aufrufen." target="_blank" th:text="${itemTitle}"></a></div>
-            <div id="feedtitle-date" th:text="${feedtitleDate}"></div>
-        </div>
-
-        <!--
-        Reusable news item
-        -->
         <th:block th:fragment="newsFeedItem (newsItem)">
             <div class="news-title">
                 <div th:if="${isMultiFeed}" class="feedName" th:text="${newsItem.feedName}"></div>
@@ -59,8 +9,6 @@
             </div>
             <div th:replace="~{fragments :: newsItemImage (newsItem=${newsItem})}"></div>
             <div class="news-summary" th:text="${newsItem.summary}"></div>
-            <div th:if="${isArticle}" class="news-html" th:utext="${newsItem.html}"></div>
-            <a th:if="${newsItem.discussionUrl != null}" class="button" th:href="${newsItem.discussionUrl}" target="_blank" th:text="'Diskussion [' + ${newsItem.commentCount} + ']'"></a>
         </th:block>
 
         <!--

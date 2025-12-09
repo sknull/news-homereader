@@ -51,6 +51,7 @@ class NewsItem(
     var articleImage: String? = null
     var discussionUrl: String? = null
     var commentCount: Int? = null
+    var isFree: Boolean = true
 
     companion object {
         val jsonMapper: JsonMapper = jacksonMapperBuilder()
@@ -84,6 +85,7 @@ class NewsItem(
             title = title,
             path = "/news/$path?hashCode=$newsItemHashCode&",
             updated = updated?.format(DateTimeFormatter.ofPattern("dd.MM.YYYY HH:mm")),
+            isFree = isFree,
             imageTitle = imageTitle,
             imageCaption = imageCaption,
             imageUrl = (if (isArticle) articleImage?:image else image)?.let { img -> imageProxy.getImage(newsItemHashCode, img) },
@@ -135,6 +137,9 @@ class NewsItem(
                         ?.filter { script -> script.graphs.isNotEmpty() }
                         ?.map { script -> script.graphs.find { g -> g.type == "NewsArticle" } }
                         ?.firstOrNull()
+
+                isFree = newsArticle?.isAccessibleForFree?:true
+
                 articleImage = newsArticle
                     ?.images
                     ?.maxBy { image -> image.width?:0 }

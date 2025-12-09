@@ -108,7 +108,7 @@ h1, h2, h3, h4 {
 	background: #00011f url(../images/bg_sage_space-theme.jpg) top left no-repeat;
 	display: grid;
 	grid-template-rows: 120px 100px calc(100vh - 220px);
-	grid-template-columns: auto;
+	grid-template-columns: 1fr;
 	grid-template-areas:
 		"headerform"
 		"feedtitle"
@@ -120,7 +120,7 @@ h1, h2, h3, h4 {
 	
 	display: grid;
 	grid-template-rows: 1fr;
-	grid-template-columns: 4fr 2fr;
+	grid-template-columns: calc(100% - 540px) 540px;
 	grid-template-areas:
 		"dummyheader buttons";
 }
@@ -143,11 +143,11 @@ h1, h2, h3, h4 {
 }
 
 #buttons button {
-	width: 100px;
+	width: 150px;
 	height: 20px;
 	display: block;
-	margin-left: auto;
-	margin-bottom: 10px;
+	float: right;
+	margin: 5px;
 	background-color: #2774ac;
 	color: #ffffff;
 	border: 0px solid transparent;
@@ -168,6 +168,7 @@ a.button {
 	cursor: pointer;
 	text-align: center;
 }
+
 
 #buttons .container {
 	float: right;
