@@ -18,7 +18,7 @@ class ReadFullArticlesTest @Autowired constructor(
     fun readTagesschau() {
         val newsFeed = NewsFeed.readValue(newsItemCache, "Tagesschau", URI("https://www.tagesschau.de/infoservices/alle-meldungen-100~rss2.xml"))
         println(newsFeed.items.joinToString("\n============================\n") { ni ->
-            ni.readFullArticle()
+            ni.readFullArticle("/News/Welt/Tagesschau")
             ni.applicationJson?.joinToString("\n----------------------------\n") { it.writeValueAsJsonString() }?:""
         })
     }
@@ -27,7 +27,7 @@ class ReadFullArticlesTest @Autowired constructor(
     fun readNtv() {
         val newsFeed = NewsFeed.readValue(newsItemCache, "NTV", URI("https://www.n-tv.de/rss"))
         println(newsFeed.items.joinToString("\n============================\n") { ni ->
-            ni.readFullArticle()
+            ni.readFullArticle("/News/Welt/NTV")
             ni.applicationJson?.joinToString("\n----------------------------\n") { it.writeValueAsJsonString() }?:""
         })
     }
@@ -36,7 +36,7 @@ class ReadFullArticlesTest @Autowired constructor(
     fun readNdr() {
         val newsFeed = NewsFeed.readValue(newsItemCache, "NDR", URI("https://www.ndr.de/nachrichten/hamburg/index~rdf.xml"))
         println(newsFeed.items.joinToString("\n============================\n") { ni ->
-            ni.readFullArticle()
+            ni.readFullArticle("/News/Lokal/NDR")
             ni.applicationJson?.joinToString("\n----------------------------\n") { it.writeValueAsJsonString() }?:""
         })
     }
@@ -45,7 +45,7 @@ class ReadFullArticlesTest @Autowired constructor(
     fun readWdr() {
         val newsFeed = NewsFeed.readValue(newsItemCache, "WDR", URI("https://www1.wdr.de/nachrichten/ruhrgebiet/uebersicht-ruhrgebiet-100.feed"))
         println(newsFeed.items.joinToString("\n============================\n") { ni ->
-            ni.readFullArticle()
+            ni.readFullArticle("/News/Lokal/WDR")
             ni.applicationJson?.joinToString("\n----------------------------\n") { it.writeValueAsJsonString() }?:""
         })
     }
@@ -54,7 +54,7 @@ class ReadFullArticlesTest @Autowired constructor(
     fun readHeise() {
         val newsFeed = NewsFeed.readValue(newsItemCache, "Heise", URI("https://www.heise.de/rss/heise-atom.xml"))
         println(newsFeed.items.joinToString("\n============================\n") { ni ->
-            ni.readFullArticle()
+            ni.readFullArticle("/IT/Heise")
             ni.applicationJson?.joinToString("\n----------------------------\n") { it.writeValueAsJsonString() }?:""
         })
     }
@@ -63,7 +63,7 @@ class ReadFullArticlesTest @Autowired constructor(
     fun readT3n() {
         val newsFeed = NewsFeed.readValue(newsItemCache, "t3n", URI("https://t3n.de/rss.xml"))
         newsFeed.items.forEach { ni ->
-            ni.readFullArticle()
+            ni.readFullArticle("IT/t3n")
             println(ni.applicationJson?.joinToString("\n----------------------------\n") { it.writeValueAsJsonString() })
         }
     }

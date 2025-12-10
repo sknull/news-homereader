@@ -23,6 +23,7 @@ class PageController(
     @GetMapping(value = ["/**"], produces = ["application/xhtml+xml"])
     fun dispatch(
         @RequestParam(name = "hashCode", required = false) hashCode: String? = null,
+        @RequestParam(name = "url", required = false) url: String? = null,
         @CookieValue(name = "clientCode", required = false) clientCode: UUID? = null,
         request: HttpServletRequest,
         response: HttpServletResponse,
@@ -35,6 +36,7 @@ class PageController(
         } else if (requestUri.startsWith("/news/")) {
             pageService.renderPage(
                 hashCode = hashCode?.toUInt(),
+                url = url,
                 clientCode = clientCode,
                 requestUri = request.getRequestUri().removePrefix("/news/"),
                 response = response,
@@ -43,6 +45,7 @@ class PageController(
         } else {
             pageService.renderPage(
                 hashCode = hashCode?.toUInt(),
+                url = url,
                 clientCode = clientCode,
                 requestUri = request.getRequestUri(),
                 response = response,
@@ -56,7 +59,7 @@ class PageController(
         @CookieValue(name = "clientCode", required = true) clientCode: UUID,
         request: HttpServletRequest,
         model: Model
-    ): String {
+    ): String? {
         return pageService.formHideRead(
             clientCode = clientCode,
             request = request,
@@ -69,7 +72,7 @@ class PageController(
         @CookieValue(name = "clientCode", required = true) clientCode: UUID,
         request: HttpServletRequest,
         model: Model
-    ): String {
+    ): String? {
         return pageService.formMarkAllRead(
             clientCode = clientCode,
             request = request,

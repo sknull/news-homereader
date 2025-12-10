@@ -31,7 +31,7 @@ class ImageProxy(
 
     private val imageCache: MutableMap<ImageInfo, Path?> = mutableMapOf()
 
-    private val imageDirectory = Paths.get(NewsHomeReader.Companion.rootDirectory.canonicalPath, "resources", "cache", "images").toFile()
+    private val imageDirectory = Paths.get(NewsHomeReader.rootDirectory.canonicalPath, "resources", "cache", "images").toFile()
 
     @PostConstruct
     fun initialize() {
@@ -53,17 +53,17 @@ class ImageProxy(
             imageInfo = downloadImage(newItemHashCode, isThumbnail, uri)
         }
 
-        return imageInfo?.let { ii -> imageCache[ii]?.relativeTo(NewsHomeReader.Companion.rootDirectory.toPath())?.toString()?.let { path -> "/$path" } }
+        return imageInfo?.let { ii -> imageCache[ii]?.relativeTo(NewsHomeReader.rootDirectory.toPath())?.toString()?.let { path -> "/$path" } }
     }
 
     fun clearCache() {
         imageCache.keys.toList()
             .forEach { imageInfo ->
                 if (!File(
-                        NewsHomeReader.Companion.rootDirectory,
+                        NewsHomeReader.rootDirectory,
                         "${imageInfo.newItemHashCode}.${imageInfo.extension}"
                     ).delete()) log.warn("Could not delete cached image file for id '${imageInfo.hashCode()}'")
-                if (!File(NewsHomeReader.Companion.rootDirectory, "${imageInfo.newItemHashCode}.json").delete()) log.warn("Could not delete cached json file for id '${imageInfo.hashCode()}'")
+                if (!File(NewsHomeReader.rootDirectory, "${imageInfo.newItemHashCode}.json").delete()) log.warn("Could not delete cached json file for id '${imageInfo.hashCode()}'")
                 imageCache.remove(imageInfo)
             }
     }
@@ -73,15 +73,16 @@ class ImageProxy(
             imageCache.keys
                 .sortedBy { imageInfo -> imageInfo.downloaded.toInstant().toEpochMilli() }
                 .dropLast(newsHomeReader.maxImagesInCache)
-                .forEach { imageInfo ->
-                    if (!File(
-                            NewsHomeReader.Companion.rootDirectory,
-                            "${imageInfo.newItemHashCode}.${imageInfo.extension}"
-                        ).delete()) log.warn("Could not delete cached image file for id '${imageInfo.hashCode()}'")
-                    if (!File(NewsHomeReader.Companion.rootDirectory, "${imageInfo.newItemHashCode}.json").delete()) log.warn("Could not delete cached json file for id '${imageInfo.hashCode()}'")
-                    imageCache.remove(imageInfo)
-                }
+                .forEach { imageInfo -> deleteImage(imageInfo.newItemHashCode) }
         }
+    }
+
+    fun deleteImage(newItemHashCode: UInt): Boolean {
+        return NewsHomeReader.rootDirectory
+            .listFiles { file -> file.nameWithoutExtension.startsWith(newItemHashCode.toString()) }
+            ?.map { file -> file.delete() }
+            ?.any { e -> !e }
+            ?:true
     }
 
     fun downloadImage(newItemHashCode: UInt, isThumbnail: Boolean, uri: String): ImageInfo? {

@@ -42,10 +42,10 @@ class NewsItem(
     var applicationJson: List<AppJson>? = null,
 ) : BaseNode<NewsItem>() {
 
-    val newsItemHashCode: UInt = "$feedName$identifier".hashCode().toUInt()
+    val newsItemHashCode: UInt = "$feedName$link".hashCode().toUInt()
 
-    var rawHtml: String? = null // as fetched from URL
-    var html: String? = null // contains only main article markup
+    var rawHtml: String = "" // as fetched from URL
+    var html: String = "" // contains only main article markup
     var videoItems: List<MediaItem> = listOf()
     var audioItems: List<MediaItem> = listOf()
     var articleImage: String? = null
@@ -70,9 +70,9 @@ class NewsItem(
         imageProxy: ImageProxy,
         isArticle: Boolean,
         clientData: ClientData,
-        path: String? = null
+        path: String
     ): NewsItemRendered {
-        if (isArticle) readFullArticle()
+        if (isArticle && html.isEmpty()) readFullArticle(path)
 
         val itemClazz = if (isArticle) "article" else "item"
         val read = clientData.readItems.contains(newsItemHashCode)
@@ -102,73 +102,86 @@ class NewsItem(
         )
     }
 
-    fun readFullArticle() {
-        if (html == null) {
-            // read only once from website to acoid traffic
-            link?.let { l -> URI(l).toURL().readText() }?.let { rawHtml ->
-                this.rawHtml = rawHtml
+    fun readFullArticle(path: String) {
+        rawHtml = link?.let {  l -> URI(l).toURL().readText() } ?: ""
 
-                // extract main text from raw html using essence's heuristics
-                var html = Essence.extract(rawHtml).html
-
-                // if image caption just contains the summary we null it out
-                imageCaption?.let { ic ->
-                    if(html.contains(ic)) {
-                        imageCaption = null
-                    }
-                }
-
-                // try to avoid repeating the summary (extraction heuristics are not perfect...)
-                summary?.let { s ->
-                    if(html.contains(s)) {
-                        html = html.replace(s, "")
-                    }
-                }
-
-                this.html = html
-
-                this.applicationJson = Jsoup.parse(rawHtml)
-                    .select("script[type=application/ld+json]")
-                    .map { script ->
-                        val appJson = jsonMapper.readValue(script.data(), AppJson::class.java)
-                        appJson.clazz = script.attr("class")
-                        appJson
-                    }
-
-                val newsArticle = applicationJson
-                    ?.find { script -> script.type == "NewsArticle" }
-                    ?:applicationJson
-                        ?.filter { script -> script.graphs.isNotEmpty() }
-                        ?.map { script -> script.graphs.find { g -> g.type == "NewsArticle" } }
-                        ?.firstOrNull()
-
-                isFree = newsArticle?.isAccessibleForFree?:true
-
-                articleImage = newsArticle
-                    ?.images
-                    ?.maxBy { image -> image.width?:0 }
-                    ?.url
-
-                var discussionUrl = newsArticle?.discussionUrl
-                if (discussionUrl?.startsWith("/") == true) { // make relative url absolute
-                    link?.let { l ->
-                        val uri = URI(l)
-                        discussionUrl = "${uri.scheme}://${uri.host}$discussionUrl"
-                    }
-                }
-                this.discussionUrl = discussionUrl
-                this.commentCount = newsArticle?.commentCount?:0
-
-                audioItems = applicationJson
-                    ?.filter { script -> script.type == "AudioObject" }
-                    ?.map { ao -> ao.toMediaItem() }
-                    ?:listOf()
-                videoItems = applicationJson
-                    ?.filter { script -> script.type == "VideoObject" }
-                    ?.map { vo -> vo.toMediaItem() }
-                    ?:listOf()
+        // extract main text from raw html using essence's heuristics
+        val htmlElement = Essence.extract(rawHtml).html
+        htmlElement?.select("a")?.forEach { a ->
+            a.attr("target", "_blank")
+            val url = a.attr("href")
+            if (url.startsWith("/")) {
+                val link = tryToMakeAbsolute(url)
+                val newsItemHashCode: UInt = "$feedName$link".hashCode().toUInt()
+                a.attr("href", "/news/$path?hashCode=$newsItemHashCode&url=$link")
             }
         }
+        var html = htmlElement?.html()?:""
+
+        // if image caption just contains the summary we null it out
+        imageCaption?.let { ic ->
+            if(html.contains(ic)) {
+                imageCaption = null
+            }
+        }
+
+        // try to avoid repeating the summary (extraction heuristics are not perfect...)
+        summary?.let { s ->
+            if(html.contains(s)) {
+                html = html.replace(s, "")
+            }
+        }
+
+        this.html = html
+
+        this.applicationJson = Jsoup.parse(rawHtml)
+            .select("script[type=application/ld+json]")
+            .map { script ->
+                val appJson = jsonMapper.readValue(script.data(), AppJson::class.java)
+                appJson.clazz = script.attr("class")
+                appJson
+            }
+
+        val newsArticle = applicationJson
+            ?.find { script -> script.type == "NewsArticle" }
+            ?:applicationJson
+                ?.filter { script -> script.graphs.isNotEmpty() }
+                ?.map { script -> script.graphs.find { g -> g.type == "NewsArticle" } }
+                ?.firstOrNull()
+
+        isFree = newsArticle?.isAccessibleForFree?:true
+
+        articleImage = newsArticle
+            ?.images
+            ?.maxBy { image -> image.width?:0 }
+            ?.url
+
+        var discussionUrl = newsArticle?.discussionUrl
+        discussionUrl = discussionUrl?.let { du ->
+            if (du.startsWith("/")) { // make relative url absolute
+                tryToMakeAbsolute(du)
+            } else {
+                du
+            }
+        }
+        this.discussionUrl = discussionUrl
+        this.commentCount = newsArticle?.commentCount?:0
+
+        audioItems = applicationJson
+            ?.filter { script -> script.type == "AudioObject" }
+            ?.map { ao -> ao.toMediaItem() }
+            ?:listOf()
+        videoItems = applicationJson
+            ?.filter { script -> script.type == "VideoObject" }
+            ?.map { vo -> vo.toMediaItem() }
+            ?:listOf()
+    }
+
+    private fun tryToMakeAbsolute(url: String): String {
+        return link?.let { l ->
+            val uri = URI(l)
+            "${uri.scheme}://${uri.host}$url"
+        }?:url
     }
 
     override fun equals(other: Any?): Boolean {

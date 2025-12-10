@@ -28,11 +28,12 @@ class PageService(
 
     fun renderPage(
         hashCode: UInt? = null,
+        url: String? = null,
         clientCode: UUID? = null,
         requestUri: String,
         response: HttpServletResponse,
         model: Model
-    ): String {
+    ): String? {
         val cc = if (clientCode == null) {
             val c = UUID.randomUUID()
             response.addPersistentCookie("clientCode", c.toString())
@@ -43,31 +44,33 @@ class PageService(
 
         val newsFeedsConfiguration = newsHomeReader.newsFeedsConfiguration()
         val currentPage = newsFeedsConfiguration?.naviMain?.getPage(requestUri)
-        renderPageModel(newsFeedsConfiguration, currentPage, hashCode, cc, model)
-
-        return "page"
+        val template = renderPageModel(newsFeedsConfiguration, currentPage, hashCode, cc, model)
+        return if (template != null) {
+            template
+        } else {
+            response.sendRedirect(url)
+            null
+        }
     }
 
     fun formHideRead(
         clientCode: UUID,
         request: HttpServletRequest,
         model: Model
-    ): String {
+    ): String? {
         val newsFeedsConfiguration = newsHomeReader.newsFeedsConfiguration()
         val requestUri = request.getRequestUri().removePrefix("/formHideRead/")
         val currentPage = newsFeedsConfiguration?.naviMain?.getPage(requestUri)
         val hideRead = request.parameterMap["hideRead"] == null
         clientDataCacheService.setHideRead(clientCode, hideRead)
-        renderPageModel(newsFeedsConfiguration, currentPage, clientCode = clientCode, model = model)
-
-        return "page"
+        return renderPageModel(newsFeedsConfiguration, currentPage, clientCode = clientCode, model = model)
     }
 
     fun formMarkAllRead(
         clientCode: UUID,
         request: HttpServletRequest,
         model: Model
-    ): String {
+    ): String? {
         val newsFeedsConfiguration = newsHomeReader.newsFeedsConfiguration()
         val requestUri = request.getRequestUri().removePrefix("/formMarkAllRead/")
         val currentPage = newsFeedsConfiguration?.naviMain?.getPage(requestUri)
@@ -90,9 +93,8 @@ class PageService(
                 }
             }
         }
-        renderPageModel(newsFeedsConfiguration, currentPage, clientCode = clientCode, model = model)
-
-        return "page"
+        return renderPageModel(newsFeedsConfiguration, currentPage, clientCode = clientCode, model = model)
+        
     }
 
     private fun renderPageModel(
@@ -101,8 +103,8 @@ class PageService(
         hashCode: UInt? = null,
         clientCode: UUID,
         model: Model
-    ) {
-        if (currentPage != null) {
+    ): String? {
+        return if (currentPage != null) {
             val hideRead = clientDataCacheService.isHideRead(clientCode)
             val path = currentPage.path()
             model.addAttribute("path", path)
@@ -118,21 +120,26 @@ class PageService(
             model.addAttribute("isMultiFeed", isMultiFeed)
             if (isArticle) {
                 clientDataCacheService.addReadItem(clientCode, hashCode)
-                newsItemCache
-                    .getNewsItem(hashCode)
-                    ?.also { item ->
-                        renderArticleModel(item, clientCode, model)
-                    }
+                val newsItem = newsItemCache.getNewsItem(hashCode)
+                if (newsItem != null) {
+                    renderArticleModel(path, newsItem, clientCode, model)
+                    "page"
+                } else {
+                    null
+                }
             } else {
                 feed?.also { feed ->
                     renderFeedModel(path, clientCode, isMultiFeed, feed, model)
                 }
+                "page"
             }
-            clientDataCacheService.cleanupOrphanedReadItems(clientCode)
+        } else {
+            null
         }
     }
 
     private fun renderArticleModel(
+        path: String,
         item: NewsItem,
         clientCode: UUID,
         model: Model
@@ -144,7 +151,8 @@ class PageService(
             "newsItem", item.toModel(
                 imageProxy = imageProxy,
                 isArticle = true,
-                clientData = clientDataCacheService.getClientData(clientCode)
+                clientData = clientDataCacheService.getClientData(clientCode),
+                path = path
             )
         )
     }
