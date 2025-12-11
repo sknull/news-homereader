@@ -51,7 +51,7 @@ class AppJson(
     val publisher: Publisher? = null,
     val relatedLink: List<String> = listOf(),
     val sourceOrganization: SourceOrganization? = null,
-    val thumbnail: List<Thumbnail> = listOf(),
+    val thumbnail: List<Image> = listOf(),
     val thumbnailUrl: List<String> = listOf(),
     val timeRequired: String? = null,
     val transcript: String? = null,
@@ -74,7 +74,7 @@ class AppJson(
             keywords = keywords,
             thumbnails = images.map { io ->
                 ThumbnailItem(
-                    url = io.contentUrl?:io.url,
+                    url = io.contentUrl?.let { cu -> listOf(cu) }?:io.url,
                     description = io.description,
                     author = io.author,
                     datePublished = io.datePublished,

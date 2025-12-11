@@ -1,13 +1,20 @@
 package de.visualdigits.newshomereader.model.newsfeed.rss
 
+import de.visualdigits.newshomereader.model.newsfeed.applicationjson.AppJson
 import de.visualdigits.newshomereader.service.cache.NewsItemCache
 import de.visualdigits.newshomereader.model.newsfeed.unified.NewsFeed
+import de.visualdigits.newshomereader.model.newsfeed.unified.NewsItem.Companion.jsonMapper
+import io.github.cdimascio.essence.Essence
+import org.jsoup.Jsoup
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
+import java.io.File
 import java.net.URI
 
+@Disabled("Only for local testing")
 @SpringBootTest
 @ActiveProfiles("test")
 class ReadFullArticlesTest @Autowired constructor(
@@ -16,11 +23,26 @@ class ReadFullArticlesTest @Autowired constructor(
 
     @Test
     fun readTagesschau() {
-        val newsFeed = NewsFeed.readValue(newsItemCache, "Tagesschau", URI("https://www.tagesschau.de/infoservices/alle-meldungen-100~rss2.xml"))
+//        val newsFeed = NewsFeed.readValue(newsItemCache, "Tagesschau", URI("https://www.tagesschau.de/infoservices/alle-meldungen-100~rss2.xml"))
+        val newsFeed = NewsFeed.readValue(newsItemCache, "Tagesschau", File(ClassLoader.getSystemResource("rdf/tagesschau2a.xml").toURI()))
         println(newsFeed.items.joinToString("\n============================\n") { ni ->
+            println("### ${ni.identifier}")
             ni.readFullArticle("/News/Welt/Tagesschau")
             ni.applicationJson?.joinToString("\n----------------------------\n") { it.writeValueAsJsonString() }?:""
         })
+    }
+
+    @Test
+    fun readTagesschau2() {
+        val rawHtml = File(ClassLoader.getSystemResource("rdf/tagesschau-story2-script.json").toURI()).readText()
+        val applicationJson = Jsoup.parse(rawHtml)
+            .select("script[type=application/ld+json]")
+            .map { script ->
+                println("#### $script")
+                val appJson = jsonMapper.readValue(script.data(), AppJson::class.java)
+                appJson.clazz = script.attr("class")
+                appJson
+            }
     }
 
     @Test

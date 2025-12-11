@@ -11,7 +11,7 @@ class Image(
     val name: String? = null,
     val contentUrl: String? = null,
     val caption: String? = null,
-    val url: String? = null,
+    val url: List<String> = listOf(),
     val author: String? = null,
     val width: Int? = null,
     val height: Int? = null,
@@ -20,5 +20,5 @@ class Image(
     val inLanguage: String? = null,
 ) : BaseNode<Image>() {
 
-    constructor(url: String): this(id = null, url = url) // force call of primary constructor
+    constructor(url: String): this(id = null, url = listOf(url)) // force call of primary constructor
 }

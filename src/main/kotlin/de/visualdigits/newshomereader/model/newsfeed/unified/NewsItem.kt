@@ -155,6 +155,7 @@ class NewsItem(
             ?.images
             ?.maxBy { image -> image.width?:0 }
             ?.url
+            ?.firstOrNull()
 
         var discussionUrl = newsArticle?.discussionUrl
         discussionUrl = discussionUrl?.let { du ->

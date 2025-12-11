@@ -12,6 +12,6 @@ class Publisher(
     val alternateName: String? = null,
     val correctionsPolicy: String? = null,
     val diversityPolicy: String? = null,
-    val sameAs: String? = null,
+    val sameAs: List<String> = listOf(),
     val logo: Logo? = null
 ) : BaseNode<Publisher>()

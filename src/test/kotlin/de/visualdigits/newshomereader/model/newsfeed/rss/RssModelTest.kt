@@ -1,7 +1,9 @@
 package de.visualdigits.newshomereader.model.newsfeed.rss
 
+import de.visualdigits.newshomereader.model.newsfeed.applicationjson.AppJson
 import de.visualdigits.newshomereader.service.cache.NewsItemCache
 import de.visualdigits.newshomereader.model.newsfeed.unified.NewsFeed
+import de.visualdigits.newshomereader.model.newsfeed.unified.NewsItem.Companion.jsonMapper
 import io.github.cdimascio.essence.Essence
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -46,6 +48,13 @@ class RssModelTest @Autowired constructor(
         val expected = File(ClassLoader.getSystemResource("rdf/tagesschau_expected-json.txt").toURI()).readText()
         val actual = newsFeed.writeValueAsJsonString()
         assertEquals(expected, actual)
+    }
+
+    @Test
+    fun readTagesschau2() {
+        val script = File(ClassLoader.getSystemResource("rdf/tagesschau-story2-script.json").toURI()).readText()
+        val appJson = jsonMapper.readValue(script, AppJson::class.java)
+        println(appJson)
     }
 
     @Test
@@ -98,7 +107,7 @@ class RssModelTest @Autowired constructor(
 //        val newsFeed = NewsFeed.readValue(URI("view-source:https://www.heise.de/news/Proaktive-IT-Security-mit-Pentesting-Ethical-Hacking-fuer-Admins-11070849.html?wt_mc=rss.red.ho.ho.atom.beitrag.beitrag"))
         val html = File(ClassLoader.getSystemResource("rdf/heise-story.html").toURI()).readText()
         val expected = File(ClassLoader.getSystemResource("rdf/heise_expected-html.txt").toURI()).readText()
-        val actual = Essence.extract(html).html
+        val actual = Essence.extract(html).html?.html()
         assertEquals(expected, actual)
     }
 
