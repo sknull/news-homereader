@@ -58,6 +58,15 @@ class RssModelTest @Autowired constructor(
     }
 
     @Test
+    fun readTOnline() {
+//        val newsFeed = NewsFeed.readValue(URI("https://www.t-online.de/feed.rss"))
+        val newsFeed = NewsFeed.readValue(newsItemCache, "NTV", File(ClassLoader.getSystemResource("rdf/t-online.xml").toURI()))
+        val expected = File(ClassLoader.getSystemResource("rdf/t-online_expected-json.txt").toURI()).readText()
+        val actual = newsFeed.writeValueAsJsonString()
+        assertEquals(expected, actual)
+    }
+
+    @Test
     fun readNdr() {
 //        val newsFeed = NewsFeed.readValue(URI("https://www.ndr.de/nachrichten/hamburg/index~rdf.xml"))
         val newsFeed = NewsFeed.readValue(newsItemCache, "NDR", File(ClassLoader.getSystemResource("rdf/ndr.xml").toURI()))

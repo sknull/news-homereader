@@ -8,9 +8,10 @@ import org.junit.jupiter.api.Test
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URI
-import java.time.OffsetDateTime
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.zip.GZIPInputStream
+
 
 class ScratchTest {
 
@@ -38,9 +39,9 @@ class ScratchTest {
 
     @Test
     fun testParseDate() {
-        val text = "2025-10-08T11:54:16+00:00"
-        val date = OffsetDateTime.parse(text, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX"))
-        println(date)
+        val text = "Thu, 11 Dec 2025 14:55:16 GMT"
+        val zonedDateTime = ZonedDateTime.parse(text, DateTimeFormatter.RFC_1123_DATE_TIME).toOffsetDateTime()
+        println(zonedDateTime)
     }
 
     @Test
