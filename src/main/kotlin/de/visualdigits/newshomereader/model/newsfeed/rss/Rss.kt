@@ -47,9 +47,9 @@ class Rss(
             updated = channel?.lastBuildDate,
             rights = channel?.rights,
             language = channel?.language,
-            items = items?.map { item -> item.toNewsItem(newsItemCache, feedName) }
+            items = (items?.map { item -> item.toNewsItem(newsItemCache, feedName) }
                 ?: channel?.items?.map { item -> item.toNewsItem(newsItemCache, feedName) }
-                ?: listOf()
+                ?: listOf()).distinct()
         )
 
         return newsFeed
