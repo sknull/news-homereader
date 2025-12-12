@@ -511,18 +511,6 @@
     "isFree" : true
   }, {
     "feedName" : "NDR",
-    "identifier" : "hamj-5096",
-    "published" : "2025-11-11T18:24:49Z",
-    "updated" : "2025-11-11T19:24:49+01:00",
-    "link" : "https://www.ndr.de/fernsehen/sendungen/hamburg_journal_1800/Hamburg-Journal-1800,hamj-5096.html",
-    "title" : "Ausflugsschiff der \"Mein Schiff 1\" in der Karibik verunglückt",
-    "summary" : "In der Dominikanischen Republik ist am Sonnabend ein Ausflugskatamaran mit Gästen des Kreuzfahrtschiffs \"Mein Schiff 1\" verunglückt. 55 Passagiere wurden aus dem Wasser gerettet.",
-    "image" : "https://images.ndr.de/image/9e363f97-ee98-42d5-bec8-28f5b58c5c5a/AAABmnQCoe4/AAABmgWmh8Q/16x9-big/screenshot-78128.jpg?width=1920",
-    "imageCaption" : "Das Kreutfahrtschiff ",
-    "newsItemHashCode" : 277813360,
-    "isFree" : true
-  }, {
-    "feedName" : "NDR",
     "identifier" : "hamj-4986",
     "published" : "2025-11-07T20:08:15Z",
     "updated" : "2025-11-07T21:08:15+01:00",
